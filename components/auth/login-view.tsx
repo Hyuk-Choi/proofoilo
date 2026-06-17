@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
@@ -123,11 +124,14 @@ export function LoginView() {
             className="inline-flex items-center gap-3"
             aria-label="Proofolio 대시보드"
           >
-            <span className="relative grid size-11 place-items-center overflow-hidden rounded-[14px] bg-[#2563eb] shadow-[0_10px_25px_rgba(37,99,235,0.26)]">
-              <span className="absolute left-[10px] top-[10px] h-5 w-4 rounded-[3px] border-2 border-white/95" />
-              <span className="absolute bottom-[9px] right-[9px] size-3 rounded-full border-2 border-white bg-[#2563eb]" />
-              <span className="absolute bottom-[11px] right-[6px] h-[2px] w-2 rotate-45 rounded-full bg-white" />
-            </span>
+            <Image
+              src="/icons/icon-192.png"
+              alt=""
+              width={44}
+              height={44}
+              priority
+              className="size-11 rounded-[14px] shadow-[0_10px_25px_rgba(16,33,61,0.18)]"
+            />
             <span>
               <strong className="block text-[20px] font-black tracking-[-0.045em] text-[#10213d]">
                 Proofolio

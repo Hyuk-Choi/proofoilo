@@ -22,6 +22,7 @@ import {
   UserRoundSearch,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -79,11 +80,14 @@ const pageMeta: Record<string, { eyebrow: string; title: string }> = {
 function ProofolioLogo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-3" aria-label="Proofolio 대시보드">
-      <span className="relative grid size-10 place-items-center overflow-hidden rounded-[13px] bg-[#2563eb] shadow-[0_10px_25px_rgba(37,99,235,0.26)]">
-        <span className="absolute left-[9px] top-[9px] h-5 w-4 rounded-[3px] border-2 border-white/95" />
-        <span className="absolute bottom-[8px] right-[8px] size-3 rounded-full border-2 border-white bg-[#2563eb]" />
-        <span className="absolute bottom-[10px] right-[5px] h-[2px] w-2 rotate-45 rounded-full bg-white" />
-      </span>
+      <Image
+        src="/icons/icon-192.png"
+        alt=""
+        width={40}
+        height={40}
+        priority
+        className="size-10 rounded-[13px] shadow-[0_10px_25px_rgba(16,33,61,0.18)]"
+      />
       <span>
         <strong className="block text-[18px] font-black tracking-[-0.045em] text-[#10213d]">
           Proofolio
