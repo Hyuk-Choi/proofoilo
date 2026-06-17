@@ -1,5 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+import { ServiceWorkerRegister } from "@/components/layout/service-worker-register";
+
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+};
 
 export const metadata: Metadata = {
   applicationName: "Proofolio",
@@ -10,6 +17,17 @@ export const metadata: Metadata = {
   },
   description:
     "프로젝트 파일과 활동 기록을 직무 역량 중심의 포트폴리오로 전환하는 커리어 브랜딩 워크스페이스",
+  appleWebApp: {
+    capable: true,
+    title: "Proofolio",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [
       {
@@ -54,7 +72,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" data-scroll-behavior="smooth">
-      <body>{children}</body>
+      <body>
+        <ServiceWorkerRegister />
+        {children}
+      </body>
     </html>
   );
 }
