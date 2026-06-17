@@ -15,7 +15,6 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
-  PanelLeftClose,
   Search,
   Settings2,
   Sparkles,
@@ -35,6 +34,7 @@ import {
 import { clearProofolioLocalStorage } from "@/lib/storage";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import type { ProofolioNavItem } from "@/types/proofolio";
+import { InstallAppButton } from "./install-app-button";
 
 const navigation: ProofolioNavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -239,13 +239,6 @@ export function ProofolioShell({ children }: { children: React.ReactNode }) {
               프로젝트 근거를 채용 담당자가 이해하는 역량으로 정리하세요.
             </p>
           </div>
-          <Link
-            href="/market-fit-lab"
-            className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[10px] font-bold text-[#8b98aa] transition hover:bg-[#f5f7fa] hover:text-[#45566e]"
-          >
-            <PanelLeftClose size={15} />
-            Market Fit Lab 열기
-          </Link>
         </div>
       </aside>
 
@@ -282,6 +275,12 @@ export function ProofolioShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <div className="md:hidden">
+              <InstallAppButton compact />
+            </div>
+            <div className="hidden md:block">
+              <InstallAppButton />
+            </div>
             {account.status === "authenticated" ? (
               <div className="hidden items-center gap-2 rounded-xl border border-[#cfe8df] bg-[#f4fbf8] px-3 py-2 text-[11px] font-extrabold text-[#168765] xl:flex">
                 <span className="size-2 rounded-full bg-[#15966f]" />
