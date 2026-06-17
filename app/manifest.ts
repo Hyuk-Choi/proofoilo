@@ -7,8 +7,29 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "프로젝트 근거를 포트폴리오, 자기소개서, 이력서 문장, 피드백, 면접 질문으로 전환하는 커리어 브랜딩 워크스페이스",
     start_url: "/dashboard",
+    scope: "/",
     display: "standalone",
     background_color: "#f4f7fb",
     theme_color: "#2563eb",
+    icons: [
+      {
+        src: "/icons/icon-192.png?v=10",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-512.png?v=10",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/maskable-512.png?v=10",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
   };
 }
