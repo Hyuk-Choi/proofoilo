@@ -4,12 +4,12 @@ import type {
   PortfolioOutput,
   ProjectAnalysis,
 } from "../../types/proofolio";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   buildConsultingComment,
   clampScore,
   hasQuantitativeEvidence,
   sentenceFragment,
-  simulateAiDelay,
 } from "./shared";
 
 export function buildFeedbackScore(
@@ -146,11 +146,10 @@ export async function generateFeedback(
   coverLetter?: CoverLetterOutput,
   userAnswers: Record<string, string> = {},
 ): Promise<FeedbackScore> {
-  await simulateAiDelay();
-  return buildFeedbackScore(
-    analysis,
-    portfolio,
-    coverLetter,
-    userAnswers,
-  );
+  return runOpenAiMock({
+    task: "expert-feedback-generation",
+    inputSummary: `${analysis.projectTitle} ${portfolio?.portfolioTitle ?? ""}`,
+    resolver: () =>
+      buildFeedbackScore(analysis, portfolio, coverLetter, userAnswers),
+  });
 }

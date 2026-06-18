@@ -99,6 +99,44 @@ function wait(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function canReadTextPreview(file: File) {
+  const category = getFileCategory(file.name);
+  return (
+    file.type.startsWith("text/") ||
+    category === "spreadsheet" ||
+    /\.(csv|tsv|txt|md|json)$/i.test(file.name)
+  );
+}
+
+async function readFileEvidence(file: File) {
+  if (!canReadTextPreview(file)) {
+    return {
+      contentPreview: "",
+      contentSummary:
+        "텍스트 직접 추출 대상이 아닌 파일입니다. mock 분석에서는 파일명, 형식, 용량과 프로젝트 유형별 전문 컨설턴트 기준으로 검토합니다.",
+    };
+  }
+
+  try {
+    const text = await file.text();
+    const normalized = text.replace(/\s+/g, " ").trim();
+    const preview = normalized.slice(0, 2400);
+
+    return {
+      contentPreview: preview,
+      contentSummary: preview
+        ? `텍스트 ${normalized.length.toLocaleString("ko-KR")}자 중 앞부분 ${preview.length.toLocaleString("ko-KR")}자를 분석 미리보기로 반영했습니다.`
+        : "파일을 읽었지만 분석 가능한 텍스트가 확인되지 않았습니다.",
+    };
+  } catch {
+    return {
+      contentPreview: "",
+      contentSummary:
+        "브라우저에서 파일 텍스트를 읽지 못했습니다. 파일명과 형식 기반 mock 분석으로 진행합니다.",
+    };
+  }
+}
+
 export function UploadView() {
   const { account, workspace, setWorkspace } = useProofolioWorkspace();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +180,7 @@ export function UploadView() {
         ? "저장 상태 확인 중"
         : "이 브라우저에 저장";
 
-  const addFiles = (incomingFiles: File[]) => {
+  const addFiles = async (incomingFiles: File[]) => {
     const { validFiles, errors: validationErrors } = validateFiles(
       incomingFiles,
       workspace.uploadedFiles,
@@ -154,6 +192,7 @@ export function UploadView() {
     if (!validFiles.length) return;
 
     const uploadedAt = new Date().toISOString();
+    const evidence = await Promise.all(validFiles.map(readFileEvidence));
     const nextFiles: UploadedFile[] = validFiles.map((file, index) => ({
       id: makeUploadId(file, index),
       name: file.name,
@@ -161,6 +200,8 @@ export function UploadView() {
       size: file.size,
       uploadedAt,
       status: "대기 중",
+      contentPreview: evidence[index].contentPreview,
+      contentSummary: evidence[index].contentSummary,
     }));
 
     setWorkspace((current) => ({
@@ -170,14 +211,14 @@ export function UploadView() {
   };
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
-    addFiles(Array.from(event.target.files ?? []));
+    void addFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
-    addFiles(Array.from(event.dataTransfer.files));
+    void addFiles(Array.from(event.dataTransfer.files));
   };
 
   const removeFile = (file: UploadedFile) => {
@@ -250,7 +291,11 @@ export function UploadView() {
             fileId: file.id,
             analysis: await analyzeFile(
               { ...file, status: "분석 중" },
-              { projectName: existingAnalysis?.projectTitle },
+              {
+                projectName: existingAnalysis?.projectTitle,
+                contentPreview: file.contentPreview,
+                contentSummary: file.contentSummary,
+              },
             ),
           };
         }),
@@ -428,8 +473,9 @@ export function UploadView() {
             한 번에 분석합니다
           </h3>
           <p className="mt-3 text-[12px] leading-6 text-white/60">
-            실제 AI 연결 전 MVP에서는 파일명과 프로젝트 맥락을 활용해 전문적인
-            분석 리포트를 생성합니다.
+            실제 AI 연결 전 MVP에서는 OpenAI mock provider가 파일명, 형식,
+            용량과 텍스트 미리보기를 검토해 전문 컨설턴트 수준의 분석
+            리포트를 생성합니다.
           </p>
           <div className="mt-6 space-y-2">
             {SUPPORTED_FILE_GROUPS.map((group) => (
@@ -560,7 +606,7 @@ export function UploadView() {
                         <span className="mt-1 block text-[11px] font-medium text-[#98a3b2]">
                           {isRestartableProcessing
                             ? "브라우저 종료로 중단된 분석입니다. AI 분석 시작을 다시 눌러 주세요."
-                            : "업로드 목록과 분석 상태는 저장됩니다. 원본 파일은 다시 선택이 필요할 수 있습니다."}
+                            : file.contentSummary || "업로드 목록과 분석 상태는 저장됩니다. 원본 파일은 다시 선택이 필요할 수 있습니다."}
                         </span>
                       </div>
                     </div>

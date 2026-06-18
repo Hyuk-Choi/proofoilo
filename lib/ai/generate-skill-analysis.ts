@@ -4,11 +4,11 @@ import type {
   SkillInsight,
   SkillLevel,
 } from "../../types/proofolio";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   clampScore,
   firstSentence,
   hasQuantitativeEvidence,
-  simulateAiDelay,
 } from "./shared";
 
 const categoryDefinitions = [
@@ -188,6 +188,9 @@ export function buildSkillAnalysisReport(
 export async function generateSkillAnalysis(
   analyses: ProjectAnalysis[],
 ): Promise<SkillAnalysisReport> {
-  await simulateAiDelay();
-  return buildSkillAnalysisReport(analyses);
+  return runOpenAiMock({
+    task: "skill-analysis-generation",
+    inputSummary: `${analyses.length} analyses`,
+    resolver: () => buildSkillAnalysisReport(analyses),
+  });
 }

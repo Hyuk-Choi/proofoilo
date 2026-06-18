@@ -11,9 +11,17 @@ export type ExportFormat =
   | "notion"
   | "pdf"
   | "ppt"
+  | "portfolioDeck"
   | "coverLetter"
   | "resume"
   | "interview";
+
+function truncate(value: string, maximum: number) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > maximum
+    ? `${normalized.slice(0, maximum - 3)}...`
+    : normalized;
+}
 
 function buildCoverLetterText(
   analysis: ProjectAnalysis,
@@ -97,6 +105,52 @@ function buildPdfText(
   ].join("\n");
 }
 
+export function buildFinalPortfolioText(workspace: ProofolioWorkspace) {
+  const analyses = workspace.analyses;
+  const profile = workspace.userProfile;
+  const allKeywords = Array.from(
+    new Set(analyses.flatMap((analysis) => analysis.competencyTags)),
+  );
+
+  if (!analyses.length) return "";
+
+  return [
+    "PROOFOLIO FINAL PORTFOLIO PPT",
+    "",
+    `[지원자] ${profile.name || "이름 미설정"}`,
+    `[목표 직무] ${profile.targetRole || "목표 직무 미설정"}`,
+    `[통합 핵심 역량] ${allKeywords.slice(0, 8).join(", ")}`,
+    "",
+    "작성 기준",
+    "- 업로드 파일별 분석 리포트를 먼저 검토하고 프로젝트별 문제, 인사이트, 전략, 역할을 분리했습니다.",
+    "- 성과 수치가 확인되지 않은 항목은 기대효과 또는 검증 과제로 구분했습니다.",
+    "- 최종본은 채용 담당자가 직무 역량을 빠르게 이해할 수 있는 PPT 포트폴리오 흐름으로 구성합니다.",
+    "",
+    ...analyses.flatMap((analysis, index) => {
+      const portfolio = workspace.portfolioOutputs[analysis.id];
+      const sourceReview = analysis.sourceReview;
+
+      return [
+        `SLIDE ${String(index + 1).padStart(2, "0")} · ${analysis.projectTitle}`,
+        `유형: ${analysis.projectType}`,
+        `한 줄 요약: ${portfolio?.keyMessage ?? analysis.oneLineSummary}`,
+        `문제 정의: ${truncate(analysis.problemDefinition, 220)}`,
+        `핵심 인사이트: ${truncate(analysis.keyInsight, 220)}`,
+        `전략/실행: ${truncate(`${analysis.strategy} ${analysis.execution}`, 260)}`,
+        `본인 역할: ${truncate(analysis.userRole, 180)}`,
+        `결과/검증 상태: ${truncate(analysis.result, 180)}`,
+        `첨부 파일 검토: ${sourceReview?.evidenceQuality ?? "파일명과 분석 리포트를 기준으로 검토했습니다."}`,
+        `보완 질문: ${analysis.missingQuestions.slice(0, 3).join(" / ")}`,
+        "",
+      ];
+    }),
+    "최종 보완 우선순위",
+    "- 성과 문장에 기준 시점, 비교 대상, 수치와 출처를 추가",
+    "- 팀 활동과 본인의 직접 기여 범위를 분리",
+    "- 대표 프로젝트는 문제-인사이트-전략-실행-결과가 한 장에서 연결되도록 시각화",
+  ].join("\n");
+}
+
 export function buildExportContent(
   workspace: ProofolioWorkspace,
   analysis: ProjectAnalysis,
@@ -112,6 +166,7 @@ export function buildExportContent(
     return portfolio ? buildPdfText(analysis, portfolio) : "";
   }
   if (format === "ppt") return portfolio?.pptCopy ?? "";
+  if (format === "portfolioDeck") return buildFinalPortfolioText(workspace);
   if (format === "coverLetter") {
     return coverLetter
       ? buildCoverLetterText(analysis, coverLetter)
@@ -131,6 +186,7 @@ export function getGeneratedExportCount(
     workspace.portfolioOutputs[analysisId],
     workspace.portfolioOutputs[analysisId],
     workspace.portfolioOutputs[analysisId],
+    workspace.analyses.length ? workspace.analyses : undefined,
     workspace.coverLetterOutputs[analysisId],
     workspace.resumeBullets[analysisId],
     workspace.interviewQuestions[analysisId],

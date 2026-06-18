@@ -2,10 +2,10 @@ import type {
   ProjectAnalysis,
   ResumeBullet,
 } from "../../types/proofolio";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
   sentenceFragment,
-  simulateAiDelay,
 } from "./shared";
 
 function createResumeBulletCopy(analysis: ProjectAnalysis) {
@@ -86,6 +86,9 @@ export function buildResumeBullets(
 export async function generateResumeBullets(
   analysis: ProjectAnalysis,
 ): Promise<ResumeBullet[]> {
-  await simulateAiDelay();
-  return buildResumeBullets(analysis);
+  return runOpenAiMock({
+    task: "resume-bullet-generation",
+    inputSummary: `${analysis.projectTitle} ${analysis.projectType}`,
+    resolver: () => buildResumeBullets(analysis),
+  });
 }

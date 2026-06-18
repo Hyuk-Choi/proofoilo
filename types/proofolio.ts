@@ -13,6 +13,16 @@ export type UploadedFile = {
   size: number;
   uploadedAt: string;
   status: UploadedFileStatus;
+  contentPreview?: string;
+  contentSummary?: string;
+};
+
+export type SourceReviewReport = {
+  reviewScope: string;
+  detectedSignals: string[];
+  evidenceQuality: string;
+  consultantNotes: string[];
+  recommendedPortfolioUse: string;
 };
 
 export type ProjectAnalysis = {
@@ -34,6 +44,7 @@ export type ProjectAnalysis = {
   improvementPoints: string[];
   expertComment: string;
   missingQuestions: string[];
+  sourceReview?: SourceReviewReport;
 };
 
 export type PortfolioOutput = {

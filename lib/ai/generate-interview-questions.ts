@@ -2,7 +2,8 @@ import type {
   InterviewQuestion,
   ProjectAnalysis,
 } from "../../types/proofolio";
-import { firstSentence, simulateAiDelay } from "./shared";
+import { runOpenAiMock } from "./openai-mock-provider";
+import { firstSentence } from "./shared";
 
 export function buildInterviewQuestions(
   analysis: ProjectAnalysis,
@@ -70,6 +71,9 @@ export function buildInterviewQuestions(
 export async function generateInterviewQuestions(
   analysis: ProjectAnalysis,
 ): Promise<InterviewQuestion[]> {
-  await simulateAiDelay();
-  return buildInterviewQuestions(analysis);
+  return runOpenAiMock({
+    task: "interview-question-generation",
+    inputSummary: `${analysis.projectTitle} ${analysis.projectType}`,
+    resolver: () => buildInterviewQuestions(analysis),
+  });
 }

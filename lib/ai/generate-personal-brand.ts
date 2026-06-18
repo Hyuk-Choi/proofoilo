@@ -2,10 +2,10 @@ import type {
   PersonalBrandProfile,
   ProjectAnalysis,
 } from "../../types/proofolio";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   firstSentence,
   joinKoreanList,
-  simulateAiDelay,
 } from "./shared";
 
 type PersonalBrandOptions = {
@@ -159,6 +159,9 @@ export async function generatePersonalBrand(
   analyses: ProjectAnalysis[],
   options: PersonalBrandOptions = {},
 ): Promise<PersonalBrandProfile> {
-  await simulateAiDelay();
-  return buildPersonalBrandProfile(analyses, options);
+  return runOpenAiMock({
+    task: "personal-brand-generation",
+    inputSummary: `${analyses.length} analyses ${options.targetRole ?? ""}`,
+    resolver: () => buildPersonalBrandProfile(analyses, options),
+  });
 }

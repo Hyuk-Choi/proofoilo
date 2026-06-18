@@ -3,11 +3,11 @@ import type {
   ProjectAnalysis,
 } from "../../types/proofolio";
 import type { GenerationOptions } from "./contracts";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
   firstSentence,
   joinKoreanList,
-  simulateAiDelay,
 } from "./shared";
 
 function buildWithinLimit(sentences: string[], characterLimit: number) {
@@ -150,6 +150,9 @@ export async function generateCoverLetter(
   analysis: ProjectAnalysis,
   options: GenerationOptions = {},
 ): Promise<CoverLetterOutput> {
-  await simulateAiDelay();
-  return buildCoverLetterOutput(analysis, options);
+  return runOpenAiMock({
+    task: "cover-letter-generation",
+    inputSummary: `${analysis.projectTitle} ${options.targetRole ?? ""}`,
+    resolver: () => buildCoverLetterOutput(analysis, options),
+  });
 }

@@ -171,6 +171,7 @@ export function AnalysisView() {
     (file) => file.name === selectedAnalysis.sourceFileName,
   );
   const reportSections = getReportSections(selectedAnalysis);
+  const sourceReview = selectedAnalysis.sourceReview;
   const answeredQuestions = Object.values(
     workspace.questionAnswers[selectedAnalysis.id] ?? {},
   ).filter((answer) => answer.trim().length > 0).length;
@@ -336,6 +337,65 @@ export function AnalysisView() {
           </header>
 
           <div className="space-y-7 p-6 sm:p-8">
+            {sourceReview ? (
+              <section className="rounded-2xl border border-[#d9e4f4] bg-[#f8fbff] p-5 sm:p-6">
+                <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.14em] text-[#2563eb]">
+                      SOURCE REVIEW
+                    </p>
+                    <h4 className="mt-1.5 text-[15px] font-black text-[#263853]">
+                      첨부 파일 상세 분석 및 검토
+                    </h4>
+                    <p className="mt-2 text-[12px] leading-6 text-[#6f7f94]">
+                      {sourceReview.reviewScope}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[#eaf1ff] px-3 py-1.5 text-[11px] font-black text-[#2563eb]">
+                    OpenAI Mock 검토
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+                  <div className="rounded-2xl border border-[#e3ebf5] bg-white p-4">
+                    <h5 className="text-[12px] font-black text-[#31435d]">
+                      감지한 핵심 신호
+                    </h5>
+                    <ul className="mt-3 space-y-2.5">
+                      {sourceReview.detectedSignals.map((signal) => (
+                        <li
+                          key={signal}
+                          className="flex gap-2 text-[12px] leading-6 text-[#66758c]"
+                        >
+                          <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#2563eb]" />
+                          {signal}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-2xl border border-[#e3ebf5] bg-white p-4">
+                    <h5 className="text-[12px] font-black text-[#31435d]">
+                      컨설턴트 검토 의견
+                    </h5>
+                    <p className="mt-3 text-[12px] leading-6 text-[#66758c]">
+                      {sourceReview.evidenceQuality}
+                    </p>
+                    <ul className="mt-3 space-y-2.5">
+                      {sourceReview.consultantNotes.map((note) => (
+                        <li
+                          key={note}
+                          className="flex gap-2 text-[12px] leading-6 text-[#66758c]"
+                        >
+                          <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#15966f]" />
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
             <section className="grid gap-4 lg:grid-cols-2">
               {reportSections.map((section) => {
                 const Icon = section.icon;

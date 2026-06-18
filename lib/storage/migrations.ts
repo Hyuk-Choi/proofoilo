@@ -10,6 +10,7 @@ import type {
   SkillAnalysisReport,
   SkillCategoryScore,
   SkillInsight,
+  SourceReviewReport,
   UserProfile,
   UploadedFile,
   UploadedFileStatus,
@@ -133,7 +134,21 @@ function isUploadedFile(value: unknown): value is UploadedFile {
     isString(value.type) &&
     typeof value.size === "number" &&
     isString(value.uploadedAt) &&
-    fileStatuses.includes(value.status as UploadedFileStatus)
+    fileStatuses.includes(value.status as UploadedFileStatus) &&
+    (value.contentPreview === undefined || isString(value.contentPreview)) &&
+    (value.contentSummary === undefined || isString(value.contentSummary))
+  );
+}
+
+function isSourceReviewReport(value: unknown): value is SourceReviewReport {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.reviewScope) &&
+    isStringArray(value.detectedSignals) &&
+    isString(value.evidenceQuality) &&
+    isStringArray(value.consultantNotes) &&
+    isString(value.recommendedPortfolioUse)
   );
 }
 
@@ -158,7 +173,9 @@ function isProjectAnalysis(value: unknown): value is ProjectAnalysis {
     isString(value.portfolioRecommendation) &&
     isStringArray(value.improvementPoints) &&
     isString(value.expertComment) &&
-    isStringArray(value.missingQuestions)
+    isStringArray(value.missingQuestions) &&
+    (value.sourceReview === undefined ||
+      isSourceReviewReport(value.sourceReview))
   );
 }
 

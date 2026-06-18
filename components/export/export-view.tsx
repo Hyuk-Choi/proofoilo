@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ClipboardList,
+  Download,
   FileOutput,
   FileText,
   ListChecks,
@@ -23,7 +24,9 @@ import {
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import {
+  buildPortfolioPptx,
   buildExportContent,
+  getPortfolioPptxFileName,
   getGeneratedExportCount,
   type ExportFormat,
 } from "@/lib/export";
@@ -37,6 +40,15 @@ const exportFormats: Array<{
   source: string;
   href: string;
 }> = [
+  {
+    id: "portfolioDeck",
+    label: "통합 포트폴리오 PPTX",
+    description: "분석된 모든 파일을 하나의 채용 포트폴리오 덱으로 묶기",
+    example: "예: 전체 프로젝트를 커버, 케이스, 역량, 보완 과제 슬라이드로 구성",
+    icon: Presentation,
+    source: "Analysis",
+    href: "/analysis",
+  },
   {
     id: "notion",
     label: "Notion용 텍스트",
@@ -104,6 +116,19 @@ export function ExportView({
     useAnalysisSelection(analyses, initialAnalysisId);
   const [format, setFormat] = useState<ExportFormat>("notion");
 
+  const downloadPortfolioDeck = () => {
+    const blob = buildPortfolioPptx(workspace);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = getPortfolioPptxFileName(workspace);
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (!selectedAnalysis) {
     return <NoAnalysisForArtifact artifactName="내보내기 결과물" />;
   }
@@ -158,8 +183,9 @@ export function ExportView({
                 출력할 결과물 형식을 선택하세요
               </h3>
               <p className="mt-1.5 text-[12px] leading-6 text-[#8996a8]">
-                실제 PDF와 PPT 파일 생성은 MVP 범위에서 제외되며, 각 문서에
-                옮길 수 있는 최종 텍스트를 제공합니다.
+                텍스트 미리보기와 함께 통합 포트폴리오 PPTX 파일을 생성할 수
+                있습니다. 실제 OpenAI API는 아직 연결하지 않고 mock provider로
+                컨설턴트 수준의 구조를 만듭니다.
               </p>
             </div>
 
@@ -241,6 +267,16 @@ export function ExportView({
                 label={`${selectedFormat.label} 복사`}
                 className="pf-button-primary h-10 px-4"
               />
+              {format === "portfolioDeck" ? (
+                <button
+                  type="button"
+                  onClick={downloadPortfolioDeck}
+                  className="pf-button-secondary h-10 px-4"
+                >
+                  <Download size={14} />
+                  PPTX 다운로드
+                </button>
+              ) : null}
             </div>
 
             {content ? (

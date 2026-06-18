@@ -3,13 +3,13 @@ import type {
   ProjectAnalysis,
 } from "../../types/proofolio";
 import type { GenerationOptions } from "./contracts";
+import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
   createStableId,
   hasQuantitativeEvidence,
   joinKoreanList,
   sentenceFragment,
-  simulateAiDelay,
 } from "./shared";
 
 export function buildPortfolioOutput(
@@ -47,6 +47,9 @@ export function buildPortfolioOutput(
   const validationCopy = `\n\n## 검증 상태와 후속 과제\n- ${evidenceStatus}\n${analysis.missingQuestions
     .map((question) => `- ${question}`)
     .join("\n")}`;
+  const sourceReviewCopy = analysis.sourceReview
+    ? `\n\n## Source Review\n- 검토 범위: ${analysis.sourceReview.reviewScope}\n- 근거 품질: ${analysis.sourceReview.evidenceQuality}\n${analysis.sourceReview.consultantNotes.map((note) => `- ${note}`).join("\n")}`
+    : "";
 
   const pptCopy = [
     `01. Executive Summary | ${keyMessage}`,
@@ -59,7 +62,10 @@ export function buildPortfolioOutput(
     `08. Outcome / Expected Impact | ${analysis.result}`,
     `09. My Contribution | ${analysis.userRole}`,
     `10. Evidence Status | ${evidenceStatus}`,
-  ].join("\n\n");
+    analysis.sourceReview
+      ? `11. Source Review | ${analysis.sourceReview.recommendedPortfolioUse}`
+      : "",
+  ].filter(Boolean).join("\n\n");
 
   const notionCopy = `# ${portfolioTitle}
 
@@ -94,7 +100,7 @@ ${analysis.userRole}
 ${skills.map((skill) => `- ${skill}`).join("\n")}
 
 ## Core Portfolio Message
-${keyMessage}${evidenceCopy}${validationCopy}`;
+${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}`;
 
   const onePageSummary = `EXECUTIVE SUMMARY
 ${keyMessage}
@@ -162,7 +168,7 @@ ${skills.map((skill) => `- ${skill}`).join("\n")}
 ${analysis.expertComment}
 
 ## 12. Core Portfolio Message
-${keyMessage}${evidenceCopy}${validationCopy}`;
+${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}`;
 
   return {
     id: createStableId("portfolio", analysis.id),
@@ -188,6 +194,9 @@ export async function generatePortfolio(
   analysis: ProjectAnalysis,
   options: GenerationOptions = {},
 ): Promise<PortfolioOutput> {
-  await simulateAiDelay();
-  return buildPortfolioOutput(analysis, options);
+  return runOpenAiMock({
+    task: "portfolio-generation",
+    inputSummary: `${analysis.projectTitle} ${analysis.projectType}`,
+    resolver: () => buildPortfolioOutput(analysis, options),
+  });
 }
