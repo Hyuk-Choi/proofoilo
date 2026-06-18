@@ -25,6 +25,22 @@ export type SourceReviewReport = {
   recommendedPortfolioUse: string;
 };
 
+export type ExpertEvidenceReview = {
+  label: string;
+  finding: string;
+  recommendation: string;
+};
+
+export type ExpertAnalysisReview = {
+  executiveDiagnosis: string;
+  hiringRelevance: string;
+  evidenceReviews: ExpertEvidenceReview[];
+  strengths: string[];
+  risks: string[];
+  validationChecklist: string[];
+  portfolioAngles: string[];
+};
+
 export type ProjectAnalysis = {
   id: string;
   sourceFileName: string;
@@ -45,6 +61,7 @@ export type ProjectAnalysis = {
   expertComment: string;
   missingQuestions: string[];
   sourceReview?: SourceReviewReport;
+  expertReview?: ExpertAnalysisReview;
 };
 
 export type PortfolioOutput = {

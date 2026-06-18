@@ -172,6 +172,7 @@ export function AnalysisView() {
   );
   const reportSections = getReportSections(selectedAnalysis);
   const sourceReview = selectedAnalysis.sourceReview;
+  const expertReview = selectedAnalysis.expertReview;
   const answeredQuestions = Object.values(
     workspace.questionAnswers[selectedAnalysis.id] ?? {},
   ).filter((answer) => answer.trim().length > 0).length;
@@ -392,6 +393,78 @@ export function AnalysisView() {
                       ))}
                     </ul>
                   </div>
+                </div>
+              </section>
+            ) : null}
+
+            {expertReview ? (
+              <section className="rounded-2xl border border-[#dfe7f1] bg-white p-5 sm:p-6">
+                <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.14em] text-[#10213d]">
+                      EXPERT DEEP DIVE
+                    </p>
+                    <h4 className="mt-1.5 text-[15px] font-black text-[#263853]">
+                      전문가 심층 분석
+                    </h4>
+                    <p className="mt-3 text-[13px] leading-[1.85] text-[#5f7087]">
+                      {expertReview.executiveDiagnosis}
+                    </p>
+                    <p className="mt-3 rounded-2xl bg-[#f6f8fb] p-4 text-[12px] leading-6 text-[#65758b]">
+                      {expertReview.hiringRelevance}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[#10213d] px-3 py-1.5 text-[11px] font-black text-white">
+                    Consultant Grade
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                  {expertReview.evidenceReviews.map((review) => (
+                    <article
+                      key={review.label}
+                      className="rounded-2xl border border-[#e5ebf2] bg-[#fbfcfe] p-4"
+                    >
+                      <h5 className="text-[12px] font-black text-[#31435d]">
+                        {review.label}
+                      </h5>
+                      <p className="mt-2 text-[12px] leading-6 text-[#68788e]">
+                        {review.finding}
+                      </p>
+                      <p className="mt-3 rounded-xl bg-white px-3 py-2.5 text-[11px] font-semibold leading-5 text-[#2563eb] shadow-sm">
+                        권고: {review.recommendation}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="mt-5 grid gap-4 xl:grid-cols-4">
+                  {[
+                    ["강점", expertReview.strengths, "bg-[#f3fbf8] text-[#168765]"],
+                    ["리스크", expertReview.risks, "bg-[#fff7f8] text-[#c24b5a]"],
+                    ["검증 체크리스트", expertReview.validationChecklist, "bg-[#f8fbff] text-[#2563eb]"],
+                    ["포트폴리오 각도", expertReview.portfolioAngles, "bg-[#fffbf2] text-[#a96a0d]"],
+                  ].map(([label, items, tone]) => (
+                    <div
+                      key={label as string}
+                      className={`rounded-2xl border border-[#e4eaf2] p-4 ${tone as string}`}
+                    >
+                      <h5 className="text-[12px] font-black">
+                        {label as string}
+                      </h5>
+                      <ul className="mt-3 space-y-2.5">
+                        {(items as string[]).map((item) => (
+                          <li
+                            key={item}
+                            className="flex gap-2 text-[11px] font-semibold leading-5"
+                          >
+                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-60" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               </section>
             ) : null}

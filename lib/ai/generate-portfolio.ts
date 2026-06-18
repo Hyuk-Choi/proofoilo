@@ -50,6 +50,14 @@ export function buildPortfolioOutput(
   const sourceReviewCopy = analysis.sourceReview
     ? `\n\n## Source Review\n- 검토 범위: ${analysis.sourceReview.reviewScope}\n- 근거 품질: ${analysis.sourceReview.evidenceQuality}\n${analysis.sourceReview.consultantNotes.map((note) => `- ${note}`).join("\n")}`
     : "";
+  const expertReviewCopy = analysis.expertReview
+    ? `\n\n## Expert Deep Dive\n### Executive Diagnosis\n${analysis.expertReview.executiveDiagnosis}\n\n### Hiring Relevance\n${analysis.expertReview.hiringRelevance}\n\n### Evidence Review\n${analysis.expertReview.evidenceReviews
+        .map(
+          (review) =>
+            `- ${review.label}: ${review.finding} 권고: ${review.recommendation}`,
+        )
+        .join("\n")}\n\n### Portfolio Angles\n${analysis.expertReview.portfolioAngles.map((angle) => `- ${angle}`).join("\n")}`
+    : "";
 
   const pptCopy = [
     `01. Executive Summary | ${keyMessage}`,
@@ -100,7 +108,7 @@ ${analysis.userRole}
 ${skills.map((skill) => `- ${skill}`).join("\n")}
 
 ## Core Portfolio Message
-${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}`;
+${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}${expertReviewCopy}`;
 
   const onePageSummary = `EXECUTIVE SUMMARY
 ${keyMessage}
@@ -168,7 +176,7 @@ ${skills.map((skill) => `- ${skill}`).join("\n")}
 ${analysis.expertComment}
 
 ## 12. Core Portfolio Message
-${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}`;
+${keyMessage}${evidenceCopy}${validationCopy}${sourceReviewCopy}${expertReviewCopy}`;
 
   return {
     id: createStableId("portfolio", analysis.id),

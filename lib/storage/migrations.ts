@@ -1,5 +1,7 @@
 import type {
   CoverLetterOutput,
+  ExpertAnalysisReview,
+  ExpertEvidenceReview,
   FeedbackScore,
   InterviewQuestion,
   PersonalBrandProfile,
@@ -152,6 +154,35 @@ function isSourceReviewReport(value: unknown): value is SourceReviewReport {
   );
 }
 
+function isExpertEvidenceReview(
+  value: unknown,
+): value is ExpertEvidenceReview {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.label) &&
+    isString(value.finding) &&
+    isString(value.recommendation)
+  );
+}
+
+function isExpertAnalysisReview(
+  value: unknown,
+): value is ExpertAnalysisReview {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.executiveDiagnosis) &&
+    isString(value.hiringRelevance) &&
+    Array.isArray(value.evidenceReviews) &&
+    value.evidenceReviews.every(isExpertEvidenceReview) &&
+    isStringArray(value.strengths) &&
+    isStringArray(value.risks) &&
+    isStringArray(value.validationChecklist) &&
+    isStringArray(value.portfolioAngles)
+  );
+}
+
 function isProjectAnalysis(value: unknown): value is ProjectAnalysis {
   if (!isRecord(value)) return false;
 
@@ -175,7 +206,9 @@ function isProjectAnalysis(value: unknown): value is ProjectAnalysis {
     isString(value.expertComment) &&
     isStringArray(value.missingQuestions) &&
     (value.sourceReview === undefined ||
-      isSourceReviewReport(value.sourceReview))
+      isSourceReviewReport(value.sourceReview)) &&
+    (value.expertReview === undefined ||
+      isExpertAnalysisReview(value.expertReview))
   );
 }
 

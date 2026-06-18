@@ -129,6 +129,7 @@ export function buildFinalPortfolioText(workspace: ProofolioWorkspace) {
     ...analyses.flatMap((analysis, index) => {
       const portfolio = workspace.portfolioOutputs[analysis.id];
       const sourceReview = analysis.sourceReview;
+      const expertReview = analysis.expertReview;
 
       return [
         `SLIDE ${String(index + 1).padStart(2, "0")} · ${analysis.projectTitle}`,
@@ -140,6 +141,8 @@ export function buildFinalPortfolioText(workspace: ProofolioWorkspace) {
         `본인 역할: ${truncate(analysis.userRole, 180)}`,
         `결과/검증 상태: ${truncate(analysis.result, 180)}`,
         `첨부 파일 검토: ${sourceReview?.evidenceQuality ?? "파일명과 분석 리포트를 기준으로 검토했습니다."}`,
+        `전문가 진단: ${expertReview?.executiveDiagnosis ? truncate(expertReview.executiveDiagnosis, 260) : "재분석 시 전문가 심층 진단이 추가됩니다."}`,
+        `채용 관점 적합도: ${expertReview?.hiringRelevance ? truncate(expertReview.hiringRelevance, 220) : "직무 역량과 프로젝트 근거의 연결성을 추가 검토해야 합니다."}`,
         `보완 질문: ${analysis.missingQuestions.slice(0, 3).join(" / ")}`,
         "",
       ];

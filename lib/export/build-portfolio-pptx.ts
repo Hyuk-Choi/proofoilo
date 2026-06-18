@@ -216,6 +216,7 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
   analyses.forEach((analysis, index) => {
     const portfolio = portfolioOutputs[analysis.id] as PortfolioOutput | undefined;
     const sourceReview = analysis.sourceReview;
+    const expertReview = analysis.expertReview;
 
     slides.push({
       eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · EXECUTIVE SUMMARY`,
@@ -247,6 +248,27 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
         truncate(sourceReview?.reviewScope ?? "파일명과 분석 리포트를 기준으로 검토했습니다.", 170),
         truncate(sourceReview?.evidenceQuality ?? "성과 수치와 출처는 추가 확인이 필요합니다.", 170),
         ...analysis.missingQuestions.slice(0, 3).map((question) => `보완 질문: ${question}`),
+      ],
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · EXPERT DEEP DIVE`,
+      title: "전문가 심층 진단",
+      body: truncate(
+        expertReview?.executiveDiagnosis ??
+          "전문가 심층 진단은 파일을 다시 분석하면 자동으로 추가됩니다.",
+        260,
+      ),
+      bullets: [
+        truncate(
+          expertReview?.hiringRelevance ??
+            "지원 직무와 프로젝트 근거의 연결성을 추가 검토해야 합니다.",
+          180,
+        ),
+        ...(expertReview?.risks.slice(0, 3).map((risk) => `리스크: ${risk}`) ?? []),
+        ...(expertReview?.portfolioAngles
+          .slice(0, 2)
+          .map((angle) => `포트폴리오 각도: ${angle}`) ?? []),
       ],
     });
   });
