@@ -29,6 +29,7 @@ import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { getWorkspaceFinalReadiness } from "@/lib/analysis/evidence-audit";
 import { getFinalPortfolioAudit } from "@/lib/analysis/final-output-audit";
 import { getWorkspacePortfolioAudit } from "@/lib/analysis/portfolio-output-audit";
+import { getWorkspaceResearchDepthAudit } from "@/lib/analysis/research-depth-audit";
 import {
   buildPortfolioPptx,
   buildExportContent,
@@ -144,6 +145,7 @@ export function ExportView({
   const readiness = getWorkspaceFinalReadiness(workspace);
   const finalAudit = getFinalPortfolioAudit(workspace);
   const portfolioAudit = getWorkspacePortfolioAudit(workspace);
+  const researchAudit = getWorkspaceResearchDepthAudit(workspace);
   const averageAccuracy = readiness.projectAudits.length
     ? Math.round(
         readiness.projectAudits.reduce(
@@ -260,6 +262,12 @@ export function ExportView({
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {[
+                    {
+                      label: "리서치 충분도",
+                      value: `${researchAudit.score}/100`,
+                      description:
+                        "원문, 출처 다양성, 시장·고객 맥락과 보완 답변이 충분히 반영됐는지 평가합니다.",
+                    },
                     {
                       label: "포트폴리오 품질",
                       value: `${portfolioAudit.score}/100`,

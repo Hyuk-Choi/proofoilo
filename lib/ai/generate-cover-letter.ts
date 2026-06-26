@@ -3,6 +3,7 @@ import type {
   ProjectAnalysis,
 } from "../../types/proofolio";
 import type { GenerationOptions } from "./contracts";
+import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
 import {
   buildEvidenceBoundaryNote,
 } from "./consultant-standards";
@@ -35,6 +36,11 @@ export function buildCoverLetterOutput(
   const targetRole = options.targetRole?.trim() || "마케팅 직무";
   const companyName = options.companyName?.trim() || "지원 기업";
   const characterLimit = Math.max(300, options.characterLimit ?? 700);
+  const researchAudit = getProjectResearchDepthAudit(
+    analysis,
+    options.workspace,
+    options.userAnswers,
+  );
   const coreSkills = joinKoreanList(analysis.competencyTags.slice(0, 3));
   const problemStatement = firstSentence(analysis.problemDefinition);
   const insightStatement = firstSentence(analysis.keyInsight);
@@ -57,6 +63,9 @@ export function buildCoverLetterOutput(
   const evidenceBoundary = buildEvidenceBoundaryNote(
     `${analysis.result} ${analysis.userRole} ${evidence.join(" ")}`,
   );
+  const researchSentence = researchAudit.readyForOutput
+    ? `리서치 점검 결과 ${researchAudit.score}/100 수준으로 원문과 보완 근거를 산출물에 반영할 수 있었습니다.`
+    : `리서치 점검 결과 ${researchAudit.score}/100 수준으로 일부 주장은 가설 또는 검증 과제로 구분해 보수적으로 표현했습니다.`;
   const structuredExperienceFrame =
     `${analysis.projectTitle} 경험은 문제 정의, 대안 비교, 본인 판단, 실행 결과와 남은 검증 과제를 분리해 설명할 때 직무 역량이 가장 선명하게 전달됩니다.`;
 
@@ -71,6 +80,7 @@ export function buildCoverLetterOutput(
         `이 판단을 바탕으로 다음 전략과 실행안을 설계했습니다. ${strategyStatement} ${executionStatement}`,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         evidenceSentence,
+        researchSentence,
         `${coreSkills} 역량을 바탕으로 입사 후에도 사실과 가설, 제안과 성과를 구분하고 고객 반응을 측정 가능한 과제로 구조화하겠습니다.`,
         `${companyName}의 브랜드 방향과 사업 목표를 연결해 팀이 검토하고 실행할 수 있는 선택지를 제시하는 ${targetRole}가 되겠습니다.`,
       ],
@@ -87,6 +97,7 @@ export function buildCoverLetterOutput(
         `실행 단계에서는 담당 과제와 검증 지표가 드러나도록 구체화했습니다. ${executionStatement}`,
         evidenceSentence,
         evidenceBoundary,
+        researchSentence,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         `이 과정에서 정보의 양보다 근거의 관련성과 신뢰도를 우선하고, 문제 정의와 실행안을 하나의 논리로 연결했습니다.`,
         `${targetRole} 업무에서도 고객 행동과 성과 지표를 함께 읽고 우선순위가 명확한 실행안을 제시하겠습니다.`,
@@ -104,6 +115,7 @@ export function buildCoverLetterOutput(
         `실행 과정은 다음과 같습니다. ${executionStatement}`,
         evidenceSentence,
         evidenceBoundary,
+        researchSentence,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         `저의 직접적인 기여는 다음과 같습니다. ${roleStatement}`,
         `특히 문제 정의, 근거 선별, 대안 비교와 실행 우선순위가 하나의 흐름으로 이어지도록 만든 점이 저의 직접 기여입니다.`,
@@ -122,6 +134,7 @@ export function buildCoverLetterOutput(
         `실행 단계에서는 역할과 산출물을 명확히 했습니다. ${executionStatement}`,
         `의견이 충돌할 때는 선호가 아니라 자료와 목표를 기준으로 선택 이유를 설명했습니다.`,
         evidenceSentence,
+        researchSentence,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         `이 방식으로 역할이 다른 구성원도 동일한 목표, 선택 근거와 우선순위를 기준으로 논의할 수 있도록 했습니다.`,
         `${targetRole}로서도 유관 부서의 관점을 빠르게 이해하고, 고객과 성과라는 공통 언어로 협업을 정리하겠습니다.`,
@@ -137,6 +150,7 @@ export function buildCoverLetterOutput(
         `그 결과 다음 결론을 도출했습니다. ${insightStatement}`,
         `결론을 전략과 실행으로 연결했습니다. ${strategyStatement} ${executionStatement}`,
         evidenceSentence,
+        researchSentence,
         `현재는 결과물을 검토할 때 다음 보완 기준을 적용하고 있습니다. ${improvementStatement}`,
         `이후에는 모든 결과물에서 사실과 해석, 제안과 검증 결과를 구분하고 다음 행동을 선택할 수 있는지를 최종 검토 기준으로 적용하고 있습니다.`,
         `앞으로도 가설과 근거를 분리해 점검하며 판단의 정확도와 실행 가능성을 높이는 ${targetRole}가 되겠습니다.`,
@@ -154,6 +168,7 @@ export function buildCoverLetterOutput(
         `실행 단계에서는 분석 자료를 구체적인 메시지와 채널 운영안으로 전환하겠습니다. 프로젝트에서의 실행 방식은 다음과 같습니다. ${executionStatement}`,
         `또한 결과를 단발성 성과로 판단하지 않고 가설, 실행, 검증 결과를 기록해 다음 의사결정에 재사용할 수 있도록 만들겠습니다.`,
         evidenceSentence,
+        researchSentence,
         `중기적으로는 브랜드 방향과 성과 데이터를 함께 해석해 유관 부서가 신뢰할 수 있는 선택지를 제시하는 ${targetRole}가 되겠습니다.`,
         `장기적으로는 ${companyName}의 고객 경험과 사업 성과를 연결하는 의사결정 체계를 설계하겠습니다.`,
       ],

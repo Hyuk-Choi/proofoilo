@@ -5,6 +5,7 @@ import type {
   ProjectAnalysis,
 } from "../../types/proofolio";
 import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
+import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
 import {
   buildConsultantLens,
   buildConsultantRevisionPrinciple,
@@ -33,6 +34,11 @@ export function buildFeedbackScore(
     (answer) => answer.trim().length > 0,
   );
   const detailedReview = getDetailedReviewForAnalysis(analysis);
+  const researchAudit = getProjectResearchDepthAudit(
+    analysis,
+    undefined,
+    userAnswers,
+  );
   const highConfidenceItems = detailedReview.itemReviews.filter(
     (item) => item.confidence === "높음",
   ).length;
@@ -62,7 +68,8 @@ export function buildFeedbackScore(
       54 +
         answeredEvidence.length * 4 +
         (metricEvidence ? 7 : 0) +
-        (outcomeEvidence ? 10 : 0),
+        (outcomeEvidence ? 10 : 0) +
+        Math.max(-8, (researchAudit.score - 70) * 0.12),
       55,
       90,
     ),
@@ -87,6 +94,15 @@ export function buildFeedbackScore(
         buildExpertStandardNote(),
         "모든 평가는 지원자의 장점을 과장하는 방식이 아니라 채용 담당자가 검증할 수 있는 근거와 리스크를 함께 보는 방식으로 수행됩니다.",
         buildConsultantLens(analysis, answeredEvidence.join(" ")),
+      ),
+      buildConsultingComment(
+        `리서치 충분도는 ${researchAudit.score}/100(${researchAudit.level})입니다. ${researchAudit.summary}`,
+        researchAudit.readyForOutput
+          ? "현재 산출물은 원문/보완 근거와 연결해 활용할 수 있지만 제출 전 수치의 출처와 비교 기준 확인은 필요합니다."
+          : "리서치가 부족한 상태에서 문장만 다듬으면 최종본이 그럴듯한 주장처럼 보일 위험이 있습니다.",
+        researchAudit.readyForOutput
+          ? "리서치 브리프를 포트폴리오 근거 박스로 남기고, 면접에서는 검증된 주장과 기대효과를 구분해 설명하세요."
+          : `우선 보완 액션: ${researchAudit.minimumActions.slice(0, 3).join(" / ") || "원문, 수치, 출처, 보완 답변을 추가하세요."}`,
       ),
       buildConsultingComment(
         `항목별 정밀 검토 ${detailedReview.itemReviews.length}개 중 근거 신뢰도 높음 ${highConfidenceItems}개, 중간 ${mediumConfidenceItems}개를 확인했습니다.`,
@@ -164,6 +180,7 @@ export function buildFeedbackScore(
         .map((gap) => `${gap.area}은 ${gap.requiredEvidence}`)
         .slice(0, 2)
         .join(" / ")}`,
+      `리서치 보완 수정안: ${researchAudit.minimumActions.slice(0, 3).join(" / ") || "검증된 주장과 기대효과를 분리해 최종본에 표시하세요."}`,
     ],
   };
 }

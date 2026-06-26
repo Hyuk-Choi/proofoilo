@@ -5,6 +5,7 @@ import {
   getWorkspaceFinalReadiness,
 } from "./evidence-audit";
 import { getWorkspacePortfolioAudit } from "./portfolio-output-audit";
+import { getWorkspaceResearchDepthAudit } from "./research-depth-audit";
 
 export type FinalAuditStatus = "통과" | "보완 필요" | "차단";
 
@@ -106,6 +107,7 @@ export function getFinalPortfolioAudit(
 ): FinalPortfolioAudit {
   const readiness = getWorkspaceFinalReadiness(workspace);
   const portfolioAudit = getWorkspacePortfolioAudit(workspace);
+  const researchAudit = getWorkspaceResearchDepthAudit(workspace);
   const analyses = workspace.analyses;
   const projectCount = analyses.length;
   const projectAudits = analyses.map((analysis) =>
@@ -193,6 +195,15 @@ export function getFinalPortfolioAudit(
         "원문 텍스트, 표/이미지 설명, 성과 수치, 출처와 비교 기준을 추가해 추론 비중을 낮추세요.",
     }),
     criterion({
+      label: "리서치 충분도",
+      score: researchAudit.score,
+      description:
+        "최종 산출물이 원문, 정량/정성 근거, 시장·고객 맥락과 보완 답변을 충분히 반영했는지 확인합니다.",
+      evidence: `리서치 감사 ${researchAudit.score}/100 · ${researchAudit.level} · 산출물 반영 가능 프로젝트 ${researchAudit.projectAudits.filter((audit) => audit.readyForOutput).length}/${projectCount}`,
+      recommendation:
+        "리서치 감사의 차단 항목을 먼저 해결하고, 부족한 주장은 최종본에서 가설·기대효과·검증 계획으로 라벨링하세요.",
+    }),
+    criterion({
       label: "산출물 완결성",
       score:
         portfolioAudit.score * 0.32 +
@@ -263,6 +274,7 @@ export function getFinalPortfolioAudit(
   const blockers = compactList([
     ...readiness.blockers,
     ...portfolioAudit.blockers,
+    ...researchAudit.blockers,
     ...criteria
       .filter((item) => item.status === "차단")
       .map((item) => `${item.label}: ${item.recommendation}`),
@@ -272,6 +284,7 @@ export function getFinalPortfolioAudit(
   const improvements = compactList([
     ...readiness.warnings,
     ...portfolioAudit.improvements,
+    ...researchAudit.improvements,
     ...criteria
       .filter((item) => item.status === "보완 필요")
       .map((item) => `${item.label}: ${item.recommendation}`),
@@ -283,7 +296,8 @@ export function getFinalPortfolioAudit(
     score >= 86 &&
     blockers.length === 0 &&
     readiness.readyForFinal &&
-    portfolioAudit.readyForPortfolioDeck;
+    portfolioAudit.readyForPortfolioDeck &&
+    researchAudit.readyForOutputs;
   const level = readyForSubmission
     ? "최종 제출 가능"
     : score >= 70
@@ -297,7 +311,7 @@ export function getFinalPortfolioAudit(
     executiveSummary: readyForSubmission
     ? "최종 포트폴리오가 지원 직무, 근거, 산출물, 면접 방어력 기준을 대부분 충족합니다. 제출 전에는 수치 출처와 개인 기여 표현만 마지막으로 확인하세요."
       : score >= 70
-        ? "최종본 구조는 형성되어 있지만 일부 근거, 산출물, 직무 맞춤 항목이 부족합니다. 보완 후 제출하면 설득력이 크게 올라갑니다."
+        ? "최종본 구조는 형성되어 있지만 일부 리서치 근거, 산출물, 직무 맞춤 항목이 부족합니다. 보완 후 제출하면 설득력이 크게 올라갑니다."
         : "현재 상태는 최종 제출본보다 초안에 가깝습니다. 목표 직무, 원문 근거, 포트폴리오 생성, 피드백, 보완 질문 답변을 먼저 채워야 합니다.",
     criteria,
     blockers,

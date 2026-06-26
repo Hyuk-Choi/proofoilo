@@ -17,6 +17,10 @@ import {
   getProjectPortfolioAudit,
   getWorkspacePortfolioAudit,
 } from "@/lib/analysis/portfolio-output-audit";
+import {
+  getProjectResearchDepthAudit,
+  getWorkspaceResearchDepthAudit,
+} from "@/lib/analysis/research-depth-audit";
 
 type SlideBlock = {
   title: string;
@@ -347,6 +351,7 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
   const readiness = getWorkspaceFinalReadiness(workspace);
   const finalAudit = getFinalPortfolioAudit(workspace);
   const portfolioAudit = getWorkspacePortfolioAudit(workspace);
+  const researchAudit = getWorkspaceResearchDepthAudit(workspace);
   const allSkills = unique(
     analyses.flatMap((analysis) => analysis.competencyTags),
   );
@@ -364,10 +369,41 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
         `최종본 준비도: ${readiness.score}/100 · ${readiness.level}`,
         `최종 QA: ${finalAudit.score}/100 · ${finalAudit.level}`,
         `포트폴리오 구조 감사: ${portfolioAudit.score}/100 · ${portfolioAudit.level}`,
+        `리서치 충분도: ${researchAudit.score}/100 · ${researchAudit.level}`,
         roleDirection,
         `제출 판단: ${finalAudit.readyForSubmission ? "최종 제출 가능" : "보완 후 제출 권장"}`,
       ],
     },
+    {
+      eyebrow: "RESEARCH DEPTH AUDIT",
+      title: "충분한 리서치와 근거 확인",
+      body: researchAudit.executiveSummary,
+      bullets: [
+        `리서치 감사: ${researchAudit.score}/100 · ${researchAudit.level}`,
+        `산출물 반영 가능 프로젝트: ${researchAudit.projectAudits.filter((audit) => audit.readyForOutput).length}/${analyses.length}`,
+        ...researchAudit.projectAudits
+          .slice(0, 3)
+          .map(
+            (audit) =>
+              `${audit.level} · ${audit.projectTitle}: ${audit.score}/100`,
+          ),
+      ],
+    },
+    ...chunkArray(
+      [
+        ...researchAudit.blockers.map((item) => `차단: ${item}`),
+        ...researchAudit.improvements.map((item) => `보완: ${item}`),
+      ],
+      4,
+    ).map((items, index) => ({
+      eyebrow: `RESEARCH DEPTH AUDIT · ACTION ${String(index + 1).padStart(2, "0")}`,
+      title: "리서치 보완 우선순위",
+      body:
+        index === 0
+          ? "아래 항목은 최종 산출물의 신뢰도와 면접 방어력에 직접 영향을 줍니다."
+          : "리서치 보완 우선순위 계속",
+      bullets: items,
+    })),
     {
       eyebrow: "PORTFOLIO STRUCTURE AUDIT",
       title: "포트폴리오 구조 품질 진단",
@@ -514,6 +550,10 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
     const detailedReview = getDetailedReviewForAnalysis(analysis);
     const accuracyReport = getAccuracyReportForAnalysis(analysis);
     const evidenceAudit = getProjectEvidenceAudit(analysis, workspace);
+    const researchDepthAudit = getProjectResearchDepthAudit(
+      analysis,
+      workspace,
+    );
     const coverLetter = workspace.coverLetterOutputs[analysis.id];
     const resume = workspace.resumeBullets[analysis.id];
     const feedback = workspace.feedbackScores[analysis.id];
@@ -532,6 +572,7 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
       bullets: [
         roleFitSummary,
         `포트폴리오 품질: ${projectPortfolioAudit.score}/100 · ${projectPortfolioAudit.level}`,
+        `리서치 충분도: ${researchDepthAudit.score}/100 · ${researchDepthAudit.level}`,
         `근거 신뢰도: ${evidenceAudit.score}/100 · ${evidenceAudit.level}`,
         `분석 정확도: ${accuracyReport.overallScore}/100 · ${accuracyReport.level}`,
         `유형: ${analysis.projectType}`,
@@ -539,6 +580,52 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
         `핵심 인사이트: ${truncate(analysis.keyInsight, 150)}`,
       ],
     });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · RESEARCH DEPTH`,
+      title: "리서치 충분도와 산출물 사용 판단",
+      body: researchDepthAudit.summary,
+      bullets: [
+        `리서치 점수: ${researchDepthAudit.score}/100 · ${researchDepthAudit.level}`,
+        `산출물 판단: ${researchDepthAudit.readyForOutput ? "최종 산출물 반영 가능" : "초안/가설 라벨 병기 필요"}`,
+        ...researchDepthAudit.researchBrief.slice(0, 4),
+      ],
+    });
+
+    chunkArray(researchDepthAudit.criteria, 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · RESEARCH CRITERIA ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "리서치 충분도 세부 기준",
+        body:
+          chunkIndex === 0
+            ? "원문, 출처 다양성, 시장·고객 맥락, 본인 기여와 검증 근거를 항목별로 점검합니다."
+            : "리서치 충분도 세부 기준 계속",
+        bullets: items.map(
+          (item) =>
+            `${item.status} · ${item.label}: ${item.score}/100 · ${item.evidence}`,
+        ),
+      });
+    });
+
+    if (
+      researchDepthAudit.minimumActions.length ||
+      researchDepthAudit.researchGaps.length
+    ) {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · RESEARCH ACTIONS`,
+        title: "리서치 공백과 보완 액션",
+        body:
+          "보완되지 않은 항목은 최종본에서 확정 성과가 아니라 기대효과, 가설 또는 검증 계획으로 표기합니다.",
+        bullets: [
+          ...researchDepthAudit.researchGaps
+            .slice(0, 3)
+            .map((item) => `공백: ${item}`),
+          ...researchDepthAudit.minimumActions
+            .slice(0, 4)
+            .map((item) => `액션: ${item}`),
+        ],
+      });
+    }
 
     slides.push({
       eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · PORTFOLIO QUALITY`,

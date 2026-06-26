@@ -22,6 +22,7 @@ import {
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { getProjectPortfolioAudit } from "@/lib/analysis/portfolio-output-audit";
+import { getProjectResearchDepthAudit } from "@/lib/analysis/research-depth-audit";
 import { generatePortfolio } from "@/lib/ai";
 import type { PortfolioOutput } from "@/types/proofolio";
 
@@ -192,6 +193,10 @@ export function PortfolioView({
     output,
     workspace,
   });
+  const researchAudit = getProjectResearchDepthAudit(
+    selectedAnalysis,
+    workspace,
+  );
   const selectedFormat =
     outputFormats.find((option) => option.id === format) ?? outputFormats[0];
 
@@ -203,6 +208,7 @@ export function PortfolioView({
       const generated = await generatePortfolio(selectedAnalysis, {
         targetRole: workspace.userProfile.targetRole || "마케팅 직무",
         userAnswers: workspace.questionAnswers[selectedAnalysis.id],
+        workspace,
       });
 
       setWorkspace((current) => ({
@@ -335,6 +341,91 @@ export function PortfolioView({
                   );
                 })}
               </div>
+            </div>
+          </section>
+
+          <section
+            className={`pf-card overflow-hidden border ${
+              researchAudit.readyForOutput
+                ? "border-[#cfe8df]"
+                : researchAudit.score >= 62
+                  ? "border-[#eadfc5]"
+                  : "border-[#f1d7dc]"
+            }`}
+          >
+            <div
+              className={`p-6 sm:p-7 ${
+                researchAudit.readyForOutput
+                  ? "bg-[#f3fbf8]"
+                  : researchAudit.score >= 62
+                    ? "bg-[#fffbf2]"
+                    : "bg-[#fff7f8]"
+              }`}
+            >
+              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                <div>
+                  <p className="text-[9px] font-black tracking-[0.14em] text-[#2563eb]">
+                    RESEARCH BEFORE OUTPUT
+                  </p>
+                  <h3 className="mt-1.5 text-[15px] font-black text-[#263853]">
+                    충분한 리서치와 근거 확인 후 생성
+                  </h3>
+                  <p className="mt-2 max-w-3xl text-[12px] leading-6 text-[#68788e]">
+                    {researchAudit.summary} 부족한 근거가 있으면 최종 문안에
+                    초안/가설 라벨과 보완 액션을 함께 표시합니다.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-sm">
+                  <strong className="block text-[26px] font-black tracking-[-0.05em] text-[#10213d]">
+                    {researchAudit.score}
+                    <span className="ml-1 text-[12px] text-[#9aa6b7]">
+                      /100
+                    </span>
+                  </strong>
+                  <p className="text-[11px] font-black text-[#52657d]">
+                    {researchAudit.level}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {researchAudit.criteria.slice(0, 6).map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/80 bg-white/80 p-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-[11px] font-black text-[#40536d]">
+                        {item.label}
+                      </strong>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[9px] font-black ${getAuditTone(item.status)}`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[14px] font-black text-[#10213d]">
+                      {item.score}/100
+                    </p>
+                    <p className="mt-1 text-[10px] font-semibold leading-5 text-[#7d8da2]">
+                      {item.evidence}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {researchAudit.minimumActions.length ? (
+                <div className="mt-4 rounded-2xl bg-white/80 p-4 shadow-sm">
+                  <strong className="text-[12px] font-black text-[#a96a0d]">
+                    생성 전/제출 전 최소 보완 액션
+                  </strong>
+                  <ul className="mt-2 space-y-1.5 text-[11px] font-semibold leading-5 text-[#806b4e]">
+                    {researchAudit.minimumActions.slice(0, 5).map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </section>
 

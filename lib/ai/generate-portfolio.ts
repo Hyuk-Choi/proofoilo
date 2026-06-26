@@ -5,6 +5,7 @@ import type {
 import type { GenerationOptions } from "./contracts";
 import { getAccuracyReportForAnalysis } from "../analysis/accuracy-review";
 import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
+import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
@@ -22,6 +23,11 @@ export function buildPortfolioOutput(
   const skills = [...analysis.competencyTags];
   const detailedReview = getDetailedReviewForAnalysis(analysis);
   const accuracyReport = getAccuracyReportForAnalysis(analysis);
+  const researchAudit = getProjectResearchDepthAudit(
+    analysis,
+    options.workspace,
+    options.userAnswers,
+  );
   const portfolioTitle = `${analysis.projectTitle} | ${analysis.projectType}`;
   const answeredEvidence = Object.values(options.userAnswers ?? {}).filter(
     (answer) => answer.trim().length > 0,
@@ -53,6 +59,32 @@ export function buildPortfolioOutput(
 - 평가받을 역량: ${joinKoreanList(skills.slice(0, 5))}
 - 읽히는 순서: 문제 정의 → 핵심 인사이트 → 전략 선택 기준 → 실행 산출물 → 본인 역할 → 결과/검증 상태
 - 면접 방어 포인트: 성과가 확정되지 않은 항목은 기대효과와 후속 검증 계획으로 분리해 설명합니다.`;
+  const researchReadinessCopy = `\n\n## Research Depth Check
+- 리서치 충분도: ${researchAudit.score}/100 · ${researchAudit.level}
+- 산출물 사용 판단: ${
+    researchAudit.readyForOutput
+      ? "최종 산출물에 반영 가능한 수준"
+      : "초안/가설 라벨과 보완 액션을 함께 표시해야 하는 수준"
+  }
+${researchAudit.researchBrief.map((item) => `- ${item}`).join("\n")}
+
+### Research Gaps
+${(researchAudit.researchGaps.length
+  ? researchAudit.researchGaps
+  : ["현재 기준에서 별도 차단 항목은 없습니다."]
+)
+  .slice(0, 6)
+  .map((item) => `- ${item}`)
+  .join("\n")}
+
+### Minimum Actions Before Submission
+${(researchAudit.minimumActions.length
+  ? researchAudit.minimumActions
+  : ["최종 제출 전 수치의 기간, 모수, 출처만 마지막으로 확인하세요."]
+)
+  .slice(0, 6)
+  .map((item) => `- ${item}`)
+  .join("\n")}`;
   const evidenceMatrixCopy = `\n\n## Evidence Matrix
 ${accuracyReport.claimChecks
   .map(
@@ -71,7 +103,8 @@ ${accuracyReport.claimChecks
 8. My Contribution: ${sentenceFragment(analysis.userRole)}
 9. Result / Validation: ${sentenceFragment(analysis.result)}
 10. Evidence Status: ${evidenceStatus}
-11. Interview Defense: 검증되지 않은 항목의 한계와 후속 확인 계획`;
+11. Research Readiness: ${researchAudit.score}/100 · ${researchAudit.level}
+12. Interview Defense: 검증되지 않은 항목의 한계와 후속 확인 계획`;
   const evidenceCopy = answeredEvidence.length
     ? `\n\n## 검증된 보완 근거\n${answeredEvidence
         .map((answer) => `- ${compactSentence(answer)}`)
@@ -115,12 +148,14 @@ ${accuracyReport.claimChecks
     `09. My Contribution | ${analysis.userRole}`,
     `10. Outcome / Expected Impact | ${analysis.result}`,
     `11. Evidence Status | ${evidenceStatus}`,
-    `12. Portfolio Fit | ${targetRole} 기준 ${joinKoreanList(skills.slice(0, 4))} 역량을 먼저 보여주는 케이스로 배치`,
+    `12. Research Depth | ${researchAudit.score}/100 · ${researchAudit.level} · ${researchAudit.readyForOutput ? "산출물 반영 가능" : "초안/보완 필요 라벨 병기"}`,
+    `13. Research Basis | ${researchAudit.researchBrief.slice(0, 2).join(" / ")}`,
+    `14. Portfolio Fit | ${targetRole} 기준 ${joinKoreanList(skills.slice(0, 4))} 역량을 먼저 보여주는 케이스로 배치`,
     analysis.sourceReview
-      ? `13. Source Review | ${analysis.sourceReview.recommendedPortfolioUse}`
+      ? `15. Source Review | ${analysis.sourceReview.recommendedPortfolioUse}`
       : "",
-    `14. Accuracy Check | ${accuracyReport.sourceCoverage.verifiedClaims}/${accuracyReport.sourceCoverage.totalClaims}개 핵심 주장 검증 · 정확도 ${accuracyReport.overallScore}/100`,
-    `15. Item-by-Item Review | ${detailedReview.itemReviews
+    `16. Accuracy Check | ${accuracyReport.sourceCoverage.verifiedClaims}/${accuracyReport.sourceCoverage.totalClaims}개 핵심 주장 검증 · 정확도 ${accuracyReport.overallScore}/100`,
+    `17. Item-by-Item Review | ${detailedReview.itemReviews
           .slice(0, 4)
           .map((item) => `${item.sourceLabel}: ${item.portfolioImplication}`)
           .join(" / ")}`,
@@ -162,7 +197,7 @@ ${analysis.userRole}
 ${skills.map((skill) => `- ${skill}`).join("\n")}
 
 ## Core Portfolio Message
-${keyMessage}${portfolioFitCopy}${evidenceCopy}${validationCopy}${evidenceMatrixCopy}${sourceReviewCopy}${detailedReviewCopy}${expertReviewCopy}`;
+${keyMessage}${portfolioFitCopy}${researchReadinessCopy}${evidenceCopy}${validationCopy}${evidenceMatrixCopy}${sourceReviewCopy}${detailedReviewCopy}${expertReviewCopy}`;
 
   const onePageSummary = `EXECUTIVE SUMMARY
 ${keyMessage}
@@ -196,6 +231,10 @@ ${joinKoreanList(skills)}
 
 EVIDENCE STATUS
 ${evidenceStatus}
+
+RESEARCH DEPTH
+${researchAudit.score}/100 · ${researchAudit.level}
+${researchAudit.researchBrief.join("\n")}
 
 PORTFOLIO FIT
 ${targetRole} 기준 ${joinKoreanList(skills.slice(0, 5))} 역량을 증명하는 케이스로 배치합니다.`;
@@ -238,10 +277,13 @@ ${skills.map((skill) => `- ${skill}`).join("\n")}
 ## 12. Portfolio Slide Blueprint
 ${slideBlueprintCopy}
 
-## 13. Consultant Review
+## 13. Research Depth Check
+${researchReadinessCopy}
+
+## 14. Consultant Review
 ${analysis.expertComment}
 
-## 14. Core Portfolio Message
+## 15. Core Portfolio Message
 ${keyMessage}${portfolioFitCopy}${evidenceCopy}${validationCopy}${evidenceMatrixCopy}${sourceReviewCopy}${detailedReviewCopy}${expertReviewCopy}`;
 
   return {

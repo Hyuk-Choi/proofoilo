@@ -34,6 +34,7 @@ import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { getAccuracyReportForAnalysis } from "@/lib/analysis/accuracy-review";
 import { getProjectEvidenceAudit } from "@/lib/analysis/evidence-audit";
 import { getDetailedReviewForAnalysis } from "@/lib/analysis/detailed-review";
+import { getProjectResearchDepthAudit } from "@/lib/analysis/research-depth-audit";
 import { formatUploadDate, getDisplayFileType } from "@/lib/files";
 import type { ProjectAnalysis } from "@/types/proofolio";
 
@@ -161,6 +162,16 @@ function getEvidenceLevelTone(level: string) {
   return "border-[#f1d7dc] bg-[#fff7f8] text-[#c24b5a]";
 }
 
+function getResearchTone(status: string) {
+  if (status === "통과") {
+    return "border-[#cfe8df] bg-[#f2fbf7] text-[#168765]";
+  }
+  if (status === "보완 필요") {
+    return "border-[#eadfc5] bg-[#fffbf2] text-[#a96a0d]";
+  }
+  return "border-[#f1d7dc] bg-[#fff7f8] text-[#c24b5a]";
+}
+
 export function AnalysisView() {
   const { workspace } = useProofolioWorkspace();
   const completedAnalyses = useMemo(
@@ -219,6 +230,10 @@ export function AnalysisView() {
   const detailedReview = getDetailedReviewForAnalysis(selectedAnalysis);
   const accuracyReport = getAccuracyReportForAnalysis(selectedAnalysis);
   const evidenceAudit = getProjectEvidenceAudit(selectedAnalysis, workspace);
+  const researchAudit = getProjectResearchDepthAudit(
+    selectedAnalysis,
+    workspace,
+  );
   const answeredQuestions = Object.values(
     workspace.questionAnswers[selectedAnalysis.id] ?? {},
   ).filter((answer) => answer.trim().length > 0).length;
@@ -390,6 +405,102 @@ export function AnalysisView() {
               이어지는지 보세요. 보완 질문은 최종 산출물의 신뢰도를 높이는
               체크리스트입니다.
             </SectionGuide>
+
+            <section
+              className={`rounded-2xl border p-5 sm:p-6 ${
+                researchAudit.readyForOutput
+                  ? "border-[#cfe8df] bg-[#f3fbf8]"
+                  : researchAudit.score >= 62
+                    ? "border-[#eadfc5] bg-[#fffbf2]"
+                    : "border-[#f1d7dc] bg-[#fff7f8]"
+              }`}
+            >
+              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                <div>
+                  <p className="text-[10px] font-black tracking-[0.14em] text-[#2563eb]">
+                    RESEARCH DEPTH AUDIT
+                  </p>
+                  <h4 className="mt-1.5 text-[16px] font-black text-[#263853]">
+                    산출물 생성 전 리서치 충분도
+                  </h4>
+                  <p className="mt-2 text-[12px] leading-6 text-[#68788e]">
+                    {researchAudit.summary} 이 기준은 원문 근거, 출처 다양성,
+                    시장·고객 맥락, 본인 기여와 보완 질문 답변을 함께 봅니다.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-sm">
+                  <span className="mx-auto grid size-10 place-items-center rounded-xl bg-[#eaf1ff] text-[#2563eb]">
+                    <Gauge size={17} />
+                  </span>
+                  <strong className="mt-2 block text-[28px] font-black tracking-[-0.05em] text-[#10213d]">
+                    {researchAudit.score}
+                    <span className="ml-1 text-[12px] text-[#9aa6b7]">
+                      /100
+                    </span>
+                  </strong>
+                  <p className="text-[11px] font-black text-[#52657d]">
+                    {researchAudit.level}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {researchAudit.criteria.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-[12px] font-black text-[#40536d]">
+                        {item.label}
+                      </strong>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${getResearchTone(item.status)}`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[15px] font-black text-[#10213d]">
+                      {item.score}/100
+                    </p>
+                    <p className="mt-2 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                      {item.evidence}
+                    </p>
+                    <p className="mt-2 text-[10px] font-semibold leading-5 text-[#68788e]">
+                      {item.recommendation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-2xl bg-white/75 p-4">
+                  <strong className="text-[12px] font-black text-[#2563eb]">
+                    리서치 브리프
+                  </strong>
+                  <ul className="mt-2 space-y-1.5 text-[11px] font-semibold leading-5 text-[#55739b]">
+                    {researchAudit.researchBrief.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-2xl bg-white/75 p-4">
+                  <strong className="text-[12px] font-black text-[#a96a0d]">
+                    제출 전 최소 보완
+                  </strong>
+                  <ul className="mt-2 space-y-1.5 text-[11px] font-semibold leading-5 text-[#806b4e]">
+                    {(researchAudit.minimumActions.length
+                      ? researchAudit.minimumActions
+                      : ["현재 기준에서 별도 차단 항목은 없습니다."]
+                    )
+                      .slice(0, 6)
+                      .map((item) => (
+                        <li key={item}>- {item}</li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
 
             <section
               className={`rounded-2xl border p-5 sm:p-6 ${

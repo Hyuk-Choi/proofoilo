@@ -1,4 +1,7 @@
-import type { ProjectAnalysis } from "../../types/proofolio";
+import type {
+  ProjectAnalysis,
+  ProofolioWorkspace,
+} from "../../types/proofolio";
 
 export type AnalyzeFileOptions = {
   projectName?: string;
@@ -11,6 +14,7 @@ export type GenerationOptions = {
   companyName?: string;
   userAnswers?: Record<string, string>;
   characterLimit?: number;
+  workspace?: ProofolioWorkspace;
 };
 
 export type AnalysisProfile = Omit<

@@ -146,6 +146,7 @@ export function CoverLetterView({
         companyName: workspace.userProfile.targetCompany || undefined,
         characterLimit,
         userAnswers: workspace.questionAnswers[selectedAnalysis.id],
+        workspace,
       });
 
       setWorkspace((current) => ({

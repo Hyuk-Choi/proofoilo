@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai/shared";
 import { getAccuracyReportForAnalysis } from "./accuracy-review";
 import { getProjectEvidenceAudit } from "./evidence-audit";
+import { getProjectResearchDepthAudit } from "./research-depth-audit";
 
 export type PortfolioAuditStatus = "통과" | "보완 필요" | "차단";
 
@@ -283,6 +284,7 @@ export function getProjectPortfolioAudit({
   const outputText = textOf(output);
   const evidenceAudit = getProjectEvidenceAudit(analysis, workspace);
   const accuracyReport = getAccuracyReportForAnalysis(analysis);
+  const researchAudit = getProjectResearchDepthAudit(analysis, workspace);
   const structureScore = getStructureScore(output);
   const roleFitScore = getRoleFitScore({
     outputText,
@@ -363,6 +365,15 @@ export function getProjectPortfolioAudit({
         "수치가 없으면 결과를 기대효과, 검증 계획, 다음 실험 지표로 나눠 면접 리스크를 낮추세요.",
     }),
     criterion({
+      label: "리서치 기반성",
+      score: researchAudit.score,
+      description:
+        "포트폴리오 문장이 충분한 원문 검토, 출처 다양성, 시장·고객 맥락과 보완 답변을 기반으로 작성됐는지 확인합니다.",
+      evidence: `리서치 충분도 ${researchAudit.score}/100 · ${researchAudit.level} · ${researchAudit.readyForOutput ? "산출물 반영 가능" : "보완 필요"}`,
+      recommendation:
+        "리서치 감사에서 차단된 항목은 최종 문장에서 확정 표현으로 쓰지 말고 가설, 기대효과, 검증 계획으로 구분하세요.",
+    }),
+    criterion({
       label: "PPT 전환 가능성",
       score: pptScore,
       description:
@@ -377,19 +388,24 @@ export function getProjectPortfolioAudit({
   const score = clampScore(average(criteria.map((item) => item.score)));
   const blockers = compactList([
     output ? "" : "포트폴리오 결과물이 생성되지 않았습니다.",
+    ...researchAudit.blockers,
     ...criteria
       .filter((item) => item.status === "차단")
       .map((item) => `${item.label}: ${item.recommendation}`),
   ]);
   const improvements = compactList(
-    criteria
-      .filter((item) => item.status === "보완 필요")
-      .map((item) => `${item.label}: ${item.recommendation}`),
+    [
+      ...researchAudit.improvements,
+      ...criteria
+        .filter((item) => item.status === "보완 필요")
+        .map((item) => `${item.label}: ${item.recommendation}`),
+    ],
   );
   const strengths = criteria
     .filter((item) => item.status === "통과")
     .map((item) => `${item.label}: ${item.evidence}`);
-  const readyForPortfolio = score >= 86 && blockers.length === 0;
+  const readyForPortfolio =
+    score >= 86 && blockers.length === 0 && researchAudit.readyForOutput;
   const level = readyForPortfolio
     ? "포트폴리오 제출 가능"
     : score >= 68
