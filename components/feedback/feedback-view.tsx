@@ -42,48 +42,56 @@ type ScoreKey = Exclude<
 const scoreItems: Array<{
   key: ScoreKey;
   label: string;
+  description: string;
   icon: LucideIcon;
   color: string;
 }> = [
   {
     key: "jobFit",
     label: "직무 적합성",
+    description: "지원 직무에서 요구하는 문제 해결 방식과 프로젝트 경험이 얼마나 맞물리는지 평가합니다.",
     icon: Target,
     color: "#2563eb",
   },
   {
     key: "problemClarity",
     label: "문제 정의 명확성",
+    description: "무엇을 해결하려 했고 왜 중요한 문제였는지 채용 담당자가 즉시 이해할 수 있는지 봅니다.",
     icon: Lightbulb,
     color: "#7157d9",
   },
   {
     key: "roleClarity",
     label: "본인 역할 선명도",
+    description: "팀 성과와 본인의 직접 기여가 분리되어 보이는지 확인합니다.",
     icon: UserRoundCheck,
     color: "#15966f",
   },
   {
     key: "evidenceStrength",
     label: "수치/근거 활용도",
+    description: "성과, 비교 기준, 자료 출처 등 주장을 뒷받침하는 근거가 충분한지 평가합니다.",
     icon: BarChart3,
     color: "#d58a18",
   },
   {
     key: "differentiation",
     label: "차별화 포인트",
+    description: "다른 지원자와 구분되는 관찰, 판단, 실행 방식이 드러나는지 봅니다.",
     icon: Sparkles,
     color: "#d05d8c",
   },
   {
     key: "writingPersuasiveness",
     label: "문장 설득력",
+    description: "문장이 추상적이지 않고 행동과 결과 중심으로 읽히는지 평가합니다.",
     icon: MessageSquareText,
     color: "#287c9e",
   },
   {
     key: "portfolioFlow",
     label: "포트폴리오 흐름",
+    description: "배경, 문제, 인사이트, 실행, 결과가 자연스러운 순서로 이어지는지 확인합니다.",
     icon: Scale,
     color: "#52657d",
   },
@@ -389,6 +397,9 @@ export function FeedbackView({
                         <p className="mt-4 text-[12px] leading-[1.8] text-[#6e7f94]">
                           {feedback.comments[index] ??
                             "평가 기준에 맞춘 추가 코멘트를 확인해 주세요."}
+                        </p>
+                        <p className="mt-3 rounded-xl bg-white px-3 py-2 text-[11px] font-semibold leading-5 text-[#7d8da2] shadow-sm">
+                          평가 기준: {item.description}
                         </p>
                       </article>
                     );

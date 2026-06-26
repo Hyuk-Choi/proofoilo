@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clipboard,
   FolderSearch2,
+  Info,
   LoaderCircle,
   Pencil,
   RefreshCcw,
@@ -47,10 +48,10 @@ export function ArtifactPageHeader({
           <Icon size={14} />
           {eyebrow}
         </p>
-        <h2 className="mt-2 text-[29px] font-black tracking-[-0.045em] text-[#10213d]">
+        <h2 className="mt-2 text-[31px] font-black tracking-[-0.045em] text-[#10213d]">
           {title}
         </h2>
-        <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#6f7f94]">
+        <p className="mt-2 max-w-3xl text-[14px] font-medium leading-7 text-[#52657d]">
           {description}
         </p>
         {example ? <ExampleHint>{example}</ExampleHint> : null}
@@ -82,13 +83,35 @@ export function ExampleHint({
   children: ReactNode;
 }) {
   return (
-    <div className="mt-3 max-w-2xl rounded-2xl border border-[#dbe7f8] bg-[#f8fbff] px-4 py-3 text-[12px] leading-6 text-[#52657d]">
-      <span className="mr-2 inline-flex rounded-full bg-[#eaf1ff] px-2.5 py-1 text-[10px] font-black text-[#2563eb]">
+    <div className="mt-3 max-w-3xl rounded-2xl border border-[#dbe7f8] bg-[#f8fbff] px-4 py-3 text-[13px] font-semibold leading-7 text-[#52657d]">
+      <span className="mr-2 inline-flex rounded-full bg-[#eaf1ff] px-2.5 py-1 text-[11px] font-black text-[#2563eb]">
         {label}
       </span>
       {children}
     </div>
   );
+}
+
+export function SectionGuide({
+  title = "읽는 방법",
+  children,
+}: {
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="pf-section-guide">
+      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-[#eaf1ff] px-2.5 py-1 text-[11px] font-black text-[#2563eb]">
+        <Info size={12} />
+        {title}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+export function FieldHelp({ children }: { children: ReactNode }) {
+  return <span className="pf-field-help">{children}</span>;
 }
 
 type AnalysisProjectPickerProps = {
@@ -113,8 +136,8 @@ export function AnalysisProjectPicker({
           <h3 className="text-[15px] font-black text-[#263853]">
             분석 프로젝트
           </h3>
-          <p className="mt-1 text-[11px] text-[#95a1b1]">
-            변환할 프로젝트를 선택하세요
+          <p className="mt-1 text-[12px] leading-5 text-[#7d8da2]">
+            선택한 프로젝트가 생성 결과의 기준이 됩니다
           </p>
         </div>
         <span className="grid size-8 place-items-center rounded-xl bg-[#eaf1ff] text-[#2563eb]">
@@ -157,11 +180,14 @@ export function AnalysisProjectPicker({
                   </span>
                 )}
               </div>
-              <strong className="mt-2 block text-[13px] font-extrabold leading-5 text-[#30425c]">
+              <strong className="mt-2 block text-[14px] font-extrabold leading-6 text-[#263853]">
                 {analysis.projectTitle}
               </strong>
-              <span className="mt-1.5 block text-[11px] leading-5 text-[#8794a6]">
+              <span className="mt-1.5 block text-[12px] leading-5 text-[#66758c]">
                 {analysis.projectType}
+              </span>
+              <span className="mt-2 block text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                이 항목은 문제 정의, 역할, 역량 문장을 생성하는 원천 리포트입니다.
               </span>
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#e6ebf2] pt-2.5">
                 {analysis.competencyTags.slice(0, 2).map((tag) => (

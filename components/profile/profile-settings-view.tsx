@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { ExampleHint } from "@/components/artifacts/artifact-workspace";
+import {
+  ExampleHint,
+  FieldHelp,
+  SectionGuide,
+} from "@/components/artifacts/artifact-workspace";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import type {
   CareerStage,
@@ -371,6 +375,12 @@ export function ProfileSettingsView() {
         </aside>
 
         <div className="space-y-5">
+          <SectionGuide title="프로필 입력 기준">
+            프로필 정보는 단순 연락처가 아니라 생성 문장의 방향을 정하는
+            기준입니다. 목표 직무, 관심 산업, 핵심 강점이 구체적일수록
+            포트폴리오와 자기소개서가 더 정확하게 맞춰집니다.
+          </SectionGuide>
+
           {activeSection === "basic" && (
             <section className="pf-card p-6 sm:p-8">
               <div className="flex items-start gap-3">
@@ -399,6 +409,7 @@ export function ProfileSettingsView() {
                     placeholder="이름을 입력하세요"
                     className={inputClassName}
                   />
+                  <FieldHelp>최종 포트폴리오 표지와 Export 파일명에 반영됩니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="영문 이름" />
@@ -410,6 +421,7 @@ export function ProfileSettingsView() {
                     placeholder="Gildong Hong"
                     className={inputClassName}
                   />
+                  <FieldHelp>글로벌 직무나 영문 이력서용 표기에 활용할 수 있습니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="이메일" />
@@ -428,6 +440,7 @@ export function ProfileSettingsView() {
                       className={`${inputClassName} pl-10`}
                     />
                   </span>
+                  <FieldHelp>로그인 계정과 지원 문서의 기본 연락처로 사용됩니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="전화번호" />
@@ -445,6 +458,7 @@ export function ProfileSettingsView() {
                       className={`${inputClassName} pl-10`}
                     />
                   </span>
+                  <FieldHelp>실제 제출 문서에 사용할 번호만 입력하세요.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="활동 지역" />
@@ -462,6 +476,7 @@ export function ProfileSettingsView() {
                       className={`${inputClassName} pl-10`}
                     />
                   </span>
+                  <FieldHelp>지원 가능 지역이나 현재 활동 기반을 표시합니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="현재 단계" />
@@ -479,6 +494,7 @@ export function ProfileSettingsView() {
                       <option key={stage}>{stage}</option>
                     ))}
                   </select>
+                  <FieldHelp>신입/주니어/경력 여부에 따라 문체와 강조점이 달라집니다.</FieldHelp>
                 </label>
               </div>
             </section>
@@ -520,6 +536,7 @@ export function ProfileSettingsView() {
                       className={`${inputClassName} pl-10`}
                     />
                   </span>
+                  <FieldHelp>모든 생성 결과의 지원 직무 방향을 결정하는 핵심 필드입니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="희망 고용 형태" />
@@ -537,6 +554,7 @@ export function ProfileSettingsView() {
                       <option key={type}>{type}</option>
                     ))}
                   </select>
+                  <FieldHelp>지원 문서에서 희망 근무 형태를 명확히 정리할 때 사용합니다.</FieldHelp>
                 </label>
                 <label className="md:col-span-2">
                   <FieldLabel label="희망 기업 또는 조직 유형" />
@@ -554,6 +572,7 @@ export function ProfileSettingsView() {
                       className={`${inputClassName} pl-10`}
                     />
                   </span>
+                  <FieldHelp>회사명이 정해지지 않았다면 산업군이나 조직 유형을 적어도 됩니다.</FieldHelp>
                 </label>
                 <label className="md:col-span-2">
                   <FieldLabel label="관심 산업" />
@@ -568,6 +587,7 @@ export function ProfileSettingsView() {
                   <p className="mt-2 text-[11px] text-[#9aa6b7]">
                     쉼표로 여러 산업을 구분하세요.
                   </p>
+                  <FieldHelp>관심 산업은 분석 결과를 어떤 시장 맥락으로 해석할지 정하는 기준입니다.</FieldHelp>
                   <PreviewTags value={draft.targetIndustries} />
                 </label>
               </div>
@@ -606,6 +626,7 @@ export function ProfileSettingsView() {
                     className={inputClassName}
                   />
                   <PreviewTags value={draft.coreStrengths} />
+                  <FieldHelp>직접 증명 가능한 강점을 우선 입력하세요. 예: 시장 분석, 고객 인사이트, 콘텐츠 구조화.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="중요하게 생각하는 업무 가치" />
@@ -618,6 +639,7 @@ export function ProfileSettingsView() {
                     className={inputClassName}
                   />
                   <PreviewTags value={draft.workValues} />
+                  <FieldHelp>업무 가치관은 브랜딩 문장의 톤과 면접 답변 방향에 반영됩니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="나를 설명하는 한 문단" />
@@ -634,6 +656,7 @@ export function ProfileSettingsView() {
                   <div className="mt-2 text-right text-[11px] text-[#9aa6b7]">
                     {draft.introduction.length} / 500자
                   </div>
+                  <FieldHelp>나의 일하는 방식, 잘 해결하는 문제, 대표 경험을 한 문단으로 적어 주세요.</FieldHelp>
                 </label>
               </div>
             </section>
@@ -670,6 +693,7 @@ export function ProfileSettingsView() {
                     placeholder="https://..."
                     className={inputClassName}
                   />
+                  <FieldHelp>Notion, Behance, 개인 웹사이트 등 외부 포트폴리오 주소를 연결합니다.</FieldHelp>
                 </label>
                 <label>
                   <FieldLabel label="LinkedIn URL" />
@@ -682,6 +706,7 @@ export function ProfileSettingsView() {
                     placeholder="https://linkedin.com/in/..."
                     className={inputClassName}
                   />
+                  <FieldHelp>공개 가능한 프로페셔널 프로필이 있을 때만 입력해도 됩니다.</FieldHelp>
                 </label>
               </div>
             </section>

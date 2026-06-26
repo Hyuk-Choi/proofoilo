@@ -1,7 +1,22 @@
 import type {
+  CoverLetterOutput,
+  FeedbackScore,
+  InterviewQuestion,
   PortfolioOutput,
   ProofolioWorkspace,
+  ResumeBullet,
 } from "@/types/proofolio";
+import { getAccuracyReportForAnalysis } from "@/lib/analysis/accuracy-review";
+import { getDetailedReviewForAnalysis } from "@/lib/analysis/detailed-review";
+import {
+  getProjectEvidenceAudit,
+  getWorkspaceFinalReadiness,
+} from "@/lib/analysis/evidence-audit";
+import { getFinalPortfolioAudit } from "@/lib/analysis/final-output-audit";
+import {
+  getProjectPortfolioAudit,
+  getWorkspacePortfolioAudit,
+} from "@/lib/analysis/portfolio-output-audit";
 
 type SlideBlock = {
   title: string;
@@ -35,6 +50,135 @@ function truncate(value: string, maximum: number) {
 
 function unique<T>(items: T[]) {
   return [...new Set(items)];
+}
+
+function chunkArray<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function splitLongText(value: string, maximum = 135) {
+  const normalized = cleanLine(value);
+  if (!normalized) return [];
+
+  const chunks: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > maximum) {
+    const slice = remaining.slice(0, maximum);
+    const breakIndex = Math.max(slice.lastIndexOf(" "), slice.lastIndexOf(","));
+    const endIndex = breakIndex > 55 ? breakIndex : maximum;
+
+    chunks.push(remaining.slice(0, endIndex).trim());
+    remaining = remaining.slice(endIndex).trim();
+  }
+
+  if (remaining) chunks.push(remaining);
+
+  return chunks;
+}
+
+function labeledChunks(label: string, value: string, maximum = 135) {
+  const chunks = splitLongText(value, maximum);
+
+  if (!chunks.length) return [`${label}: 내용 없음`];
+
+  return chunks.map((chunk, index) =>
+    index === 0 ? `${label}: ${chunk}` : `${label} 계속: ${chunk}`,
+  );
+}
+
+function getRoleDirection(
+  targetRole: string,
+  skills: string[],
+) {
+  const normalizedRole = targetRole.toLocaleLowerCase("ko-KR");
+  const topSkills = skills.slice(0, 4).join(", ") || "문제 정의, 근거 분석, 실행안 도출";
+
+  if (/퍼포먼스|그로스|performance|growth/.test(normalizedRole)) {
+    return `지원 직무 방향: ${targetRole}. 따라서 최종 포트폴리오는 타깃 정의, 성과 지표 해석, 광고·랜딩 개선, 실험 설계 역량이 먼저 보이도록 구성합니다. 핵심 근거는 ${topSkills}입니다.`;
+  }
+
+  if (/브랜드|brand|글로벌|global/.test(normalizedRole)) {
+    return `지원 직무 방향: ${targetRole}. 따라서 최종 포트폴리오는 시장 이해, 브랜드 포지셔닝, 고객 인사이트, 커뮤니케이션 전략 역량이 먼저 보이도록 구성합니다. 핵심 근거는 ${topSkills}입니다.`;
+  }
+
+  if (/콘텐츠|content|sns|커뮤니케이션/.test(normalizedRole)) {
+    return `지원 직무 방향: ${targetRole}. 따라서 최종 포트폴리오는 이슈 리서치, 메시지 구조화, 콘텐츠 기획, 독자 반응 검증 역량이 먼저 보이도록 구성합니다. 핵심 근거는 ${topSkills}입니다.`;
+  }
+
+  if (/pm|서비스|기획|product/.test(normalizedRole)) {
+    return `지원 직무 방향: ${targetRole}. 따라서 최종 포트폴리오는 문제 정의, 사용자·시장 근거, 우선순위 설정, 실행 검증 역량이 먼저 보이도록 구성합니다. 핵심 근거는 ${topSkills}입니다.`;
+  }
+
+  return `지원 직무 방향: ${targetRole}. 따라서 최종 포트폴리오는 문제 정의, 근거 기반 판단, 실행안 구조화, 본인 기여도와 검증 가능성이 먼저 보이도록 구성합니다. 핵심 근거는 ${topSkills}입니다.`;
+}
+
+function getRoleFitSummary(
+  targetRole: string,
+  analysisSkills: string[],
+  projectType: string,
+) {
+  return `${targetRole} 관점에서 이 프로젝트는 ${analysisSkills
+    .slice(0, 3)
+    .join(", ")} 역량을 보여주는 ${projectType} 사례입니다. 최종 덱에서는 활동 자체보다 직무에서 재현 가능한 판단 기준과 본인 기여도를 중심으로 배치합니다.`;
+}
+
+function artifactStatusLabel(value: boolean) {
+  return value ? "완료" : "미생성";
+}
+
+function coverLetterBullets(output?: CoverLetterOutput) {
+  if (!output) return ["자기소개서 미생성: Cover Letter 페이지에서 생성하면 최종본 부록에 포함됩니다."];
+
+  return [
+    ...labeledChunks("지원동기", output.motivation),
+    ...labeledChunks("직무역량", output.competency),
+    ...labeledChunks("성과경험", output.achievement),
+    ...labeledChunks("협업경험", output.collaboration),
+    ...labeledChunks("성장과정", output.growth),
+    ...labeledChunks("입사 후 포부", output.futurePlan),
+  ];
+}
+
+function resumeBullets(output?: ResumeBullet[]) {
+  if (!output?.length) return ["이력서 문장 미생성: Resume 페이지에서 생성하면 최종본 부록에 포함됩니다."];
+
+  return output.flatMap((group) => [
+    ...labeledChunks("이력서 그룹", group.title),
+    ...group.bullets.flatMap((bullet) => labeledChunks("이력서 bullet", bullet)),
+    ...labeledChunks("키워드", group.keywords.join(", ")),
+  ]);
+}
+
+function feedbackBullets(output?: FeedbackScore) {
+  if (!output) return ["전문가 피드백 미생성: Feedback 페이지에서 생성하면 점수와 수정 제안이 최종본에 포함됩니다."];
+
+  return [
+    `총점: ${output.totalScore}/100`,
+    `직무 적합성 ${output.jobFit}/100 · 문제 정의 ${output.problemClarity}/100 · 역할 선명도 ${output.roleClarity}/100`,
+    `근거 활용도 ${output.evidenceStrength}/100 · 차별화 ${output.differentiation}/100 · 문장 설득력 ${output.writingPersuasiveness}/100`,
+    ...output.comments.flatMap((comment) => labeledChunks("코멘트", comment)),
+    ...output.revisionSuggestions.flatMap((suggestion) =>
+      labeledChunks("수정 제안", suggestion),
+    ),
+  ];
+}
+
+function interviewBullets(output?: InterviewQuestion[]) {
+  if (!output?.length) return ["면접 질문 미생성: Interview 페이지에서 생성하면 대표 질문과 답변 가이드가 포함됩니다."];
+
+  return output.flatMap((question, index) => [
+    ...labeledChunks(`Q${index + 1}`, question.question),
+    ...question.followUpQuestions.flatMap((followUp) =>
+      labeledChunks("꼬리질문", followUp),
+    ),
+    ...labeledChunks("답변 가이드", question.answerGuide),
+    ...labeledChunks("약점 방어", question.weaknessDefense),
+  ]);
 }
 
 function crc32(bytes: Uint8Array) {
@@ -139,6 +283,17 @@ function textParagraph(text: string, size = 1700, level = 0) {
   return `<a:p><a:pPr lvl="${level}"/><a:r><a:rPr lang="ko-KR" sz="${size}" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>`;
 }
 
+function solidRect(
+  id: number,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  fill: string,
+) {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Block ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${fill}"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>`;
+}
+
 function shapeText(
   id: number,
   x: number,
@@ -151,13 +306,15 @@ function shapeText(
 }
 
 function buildSlideXml(slide: SlideBlock, index: number) {
-  const title = textParagraph(slide.title, 2500);
+  const title = textParagraph(slide.title, 2700);
   const eyebrow = slide.eyebrow
-    ? shapeText(10, 640000, 280000, 5600000, 360000, textParagraph(slide.eyebrow, 1050))
+    ? shapeText(10, 650000, 295000, 6000000, 360000, textParagraph(slide.eyebrow, 1050))
     : "";
   const bodyParagraphs = [
-    slide.body ? textParagraph(slide.body, 1450) : "",
-    ...(slide.bullets ?? []).slice(0, 6).map((bullet) => textParagraph(`• ${bullet}`, 1380)),
+    slide.body ? textParagraph(slide.body, 1420) : "",
+    ...(slide.bullets ?? [])
+      .slice(0, 5)
+      .map((bullet) => textParagraph(`• ${truncate(bullet, 160)}`, 1320)),
   ].join("");
   const footer = textParagraph(
     slide.footer ?? `Proofolio Consultant Portfolio · ${String(index).padStart(2, "0")}`,
@@ -171,9 +328,11 @@ function buildSlideXml(slide: SlideBlock, index: number) {
     <p:spTree>
       <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
       <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+      ${solidRect(20, 0, 0, 12192000, 235000, "10213D")}
+      ${solidRect(21, 570000, 1660000, 11040000, 4140000, "FFFFFF")}
       ${eyebrow}
       ${shapeText(2, 620000, 760000, 10900000, 760000, title)}
-      ${shapeText(3, 700000, 1750000, 10800000, 3900000, bodyParagraphs)}
+      ${shapeText(3, 760000, 1830000, 10480000, 3740000, bodyParagraphs)}
       ${shapeText(4, 700000, 6350000, 10800000, 280000, footer)}
     </p:spTree>
   </p:cSld>
@@ -185,20 +344,133 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
   const analyses = workspace.analyses;
   const profile = workspace.userProfile;
   const portfolioOutputs = workspace.portfolioOutputs;
+  const readiness = getWorkspaceFinalReadiness(workspace);
+  const finalAudit = getFinalPortfolioAudit(workspace);
+  const portfolioAudit = getWorkspacePortfolioAudit(workspace);
   const allSkills = unique(
     analyses.flatMap((analysis) => analysis.competencyTags),
   );
   const targetRole = profile.targetRole || "지원 직무";
+  const roleDirection = getRoleDirection(targetRole, allSkills);
 
   const slides: SlideBlock[] = [
     {
       eyebrow: "PROOFOLIO FINAL PORTFOLIO",
       title: `${profile.name || "지원자"} 통합 포트폴리오`,
-      body: `${analyses.length}개 업로드 파일과 분석 리포트를 기반으로 ${targetRole} 관점의 문제 정의, 핵심 인사이트, 실행 전략, 본인 역할과 보완 질문을 하나의 채용 포트폴리오 덱으로 정리했습니다.`,
+      body: `${analyses.length}개 업로드 파일과 분석 리포트를 기반으로 ${targetRole} 관점의 문제 정의, 핵심 인사이트, 실행 전략, 본인 역할, 전문가 진단과 보완 질문을 하나의 채용 포트폴리오 덱으로 정리했습니다.`,
       bullets: [
         `목표 직무: ${targetRole}`,
         `핵심 역량: ${allSkills.slice(0, 5).join(", ") || "분석 후 자동 도출"}`,
-        "작성 기준: 전문 컨설턴트 관점, 사실·추론·제안·검증 상태 분리",
+        `최종본 준비도: ${readiness.score}/100 · ${readiness.level}`,
+        `최종 QA: ${finalAudit.score}/100 · ${finalAudit.level}`,
+        `포트폴리오 구조 감사: ${portfolioAudit.score}/100 · ${portfolioAudit.level}`,
+        roleDirection,
+        `제출 판단: ${finalAudit.readyForSubmission ? "최종 제출 가능" : "보완 후 제출 권장"}`,
+      ],
+    },
+    {
+      eyebrow: "PORTFOLIO STRUCTURE AUDIT",
+      title: "포트폴리오 구조 품질 진단",
+      body: portfolioAudit.executiveSummary,
+      bullets: [
+        `포트폴리오 감사: ${portfolioAudit.score}/100 · ${portfolioAudit.level}`,
+        ...portfolioAudit.projectAudits
+          .slice(0, 4)
+          .map(
+            (audit) =>
+              `${audit.level} · ${audit.projectTitle}: ${audit.score}/100`,
+          ),
+      ],
+    },
+    ...chunkArray(
+      [
+        ...portfolioAudit.blockers.map((item) => `차단: ${item}`),
+        ...portfolioAudit.improvements.map((item) => `보완: ${item}`),
+      ],
+      4,
+    ).map((items, index) => ({
+      eyebrow: `PORTFOLIO STRUCTURE AUDIT · ACTION ${String(index + 1).padStart(2, "0")}`,
+      title: "포트폴리오 구조 보완 권고",
+      body:
+        index === 0
+          ? "아래 항목은 최종 덱이 단순 분석 보고서가 아니라 채용 포트폴리오로 읽히기 위해 필요한 보완입니다."
+          : "포트폴리오 구조 보완 권고 계속",
+      bullets: items,
+    })),
+    {
+      eyebrow: "FINAL PORTFOLIO QA",
+      title: "최종 제출 가능성 진단",
+      body: finalAudit.executiveSummary,
+      bullets: [
+        `QA 점수: ${finalAudit.score}/100 · ${finalAudit.level}`,
+        ...finalAudit.criteria
+          .slice(0, 4)
+          .map((item) => `${item.status} · ${item.label}: ${item.score}/100`),
+      ],
+    },
+    ...chunkArray(
+      [
+        ...finalAudit.blockers.map((item) => `차단: ${item}`),
+        ...finalAudit.improvements.map((item) => `보완: ${item}`),
+      ],
+      4,
+    ).map((items, index) => ({
+      eyebrow: `FINAL PORTFOLIO QA · ACTION ${String(index + 1).padStart(2, "0")}`,
+      title: "최종 QA 차단 항목과 보완 권고",
+      body:
+        index === 0
+          ? "아래 항목은 완성본의 신뢰도, 직무 적합도, 면접 방어력에 직접 영향을 줍니다."
+          : "최종 QA 보완 권고 계속",
+      bullets: items,
+    })),
+    ...chunkArray(finalAudit.criteria, 4).map((items, index) => ({
+      eyebrow: `FINAL PORTFOLIO QA · DETAIL ${String(index + 1).padStart(2, "0")}`,
+      title: "최종 QA 세부 기준",
+      body:
+        index === 0
+          ? "각 기준은 최종 포트폴리오가 제출 가능한 완성본인지 판단하는 컨설턴트식 체크리스트입니다."
+          : "최종 QA 세부 기준 계속",
+      bullets: items.map(
+        (item) =>
+          `${item.label} ${item.score}/100 · ${item.status}: ${item.evidence} / 권고: ${item.recommendation}`,
+      ),
+    })),
+    {
+      eyebrow: "FINAL READINESS AUDIT",
+      title: "최종본 완성도와 보완 차단 항목",
+      body:
+        "최종 PPTX는 완성본 형태로 생성되지만, 아래 체크리스트가 남아 있으면 제출 전 보완을 권장합니다. 특히 원문 근거, 성과 수치, 본인 기여도는 면접 검증 가능성이 큰 항목입니다.",
+      bullets: [
+        `준비도: ${readiness.score}/100 · ${readiness.level}`,
+        ...readiness.checklist.map(
+          (item) =>
+            `${item.done ? "완료" : "보완 필요"} · ${item.label}: ${item.description}`,
+        ),
+      ],
+    },
+    ...(readiness.blockers.length || readiness.warnings.length
+      ? [
+          {
+            eyebrow: "FINAL READINESS AUDIT",
+            title: "제출 전 보완 권고",
+            body:
+              "아래 항목은 최종본의 신뢰도와 면접 방어력을 좌우합니다. 보완하지 않아도 다운로드는 가능하지만, 최종 제출본으로 쓰기 전 확인이 필요합니다.",
+            bullets: [
+              ...readiness.blockers.map((item) => `차단 항목: ${item}`),
+              ...readiness.warnings.map((item) => `권장 보완: ${item}`),
+            ],
+          },
+        ]
+      : []),
+    {
+      eyebrow: "TARGET ROLE STRATEGY",
+      title: "지원 직무 맞춤 포트폴리오 방향",
+      body: roleDirection,
+      bullets: [
+        "각 프로젝트는 지원 직무에서 평가하는 역량과 연결되는 순서로 재배치",
+        "성과 수치가 부족한 경우 확정 성과가 아니라 기대효과와 검증 과제로 구분",
+        "본인 역할은 조사, 판단, 실행, 조율, 산출물 단위로 분리",
+        "마지막 슬라이드에는 면접에서 보완해야 할 질문과 근거 확보 과제를 정리",
       ],
     },
     {
@@ -211,22 +483,170 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
         "최종 산출물은 채용 담당자가 빠르게 이해하는 직무 역량 중심 문장으로 재구성",
       ],
     },
+    {
+      eyebrow: "PORTFOLIO STRUCTURE",
+      title: "최종 덱 구성",
+      body:
+        "이 PPT는 전체 프로젝트를 한 번에 나열하지 않고, 채용 담당자가 빠르게 판단할 수 있도록 핵심 역량과 대표 근거를 먼저 보여준 뒤 프로젝트별 케이스 스터디로 확장합니다.",
+      bullets: [
+        `전체 분석 프로젝트: ${analyses.length}개`,
+        `반복 확인 역량: ${allSkills.slice(0, 6).join(", ") || "분석 결과 생성 필요"}`,
+        `직무 맞춤 설계: ${targetRole} 평가 기준에 맞춰 문제 정의, 판단 근거, 실행 결과 순서로 구성`,
+        ...analyses
+          .slice(0, 3)
+          .map(
+            (analysis, index) =>
+              `대표 케이스 ${index + 1}: ${analysis.projectTitle} · ${analysis.projectType}`,
+          ),
+      ],
+    },
   ];
 
   analyses.forEach((analysis, index) => {
     const portfolio = portfolioOutputs[analysis.id] as PortfolioOutput | undefined;
+    const projectPortfolioAudit = getProjectPortfolioAudit({
+      analysis,
+      output: portfolio,
+      workspace,
+    });
     const sourceReview = analysis.sourceReview;
     const expertReview = analysis.expertReview;
+    const detailedReview = getDetailedReviewForAnalysis(analysis);
+    const accuracyReport = getAccuracyReportForAnalysis(analysis);
+    const evidenceAudit = getProjectEvidenceAudit(analysis, workspace);
+    const coverLetter = workspace.coverLetterOutputs[analysis.id];
+    const resume = workspace.resumeBullets[analysis.id];
+    const feedback = workspace.feedbackScores[analysis.id];
+    const interview = workspace.interviewQuestions[analysis.id];
+    const portfolioSummary = portfolio?.onePageSummary ?? "";
+    const roleFitSummary = getRoleFitSummary(
+      targetRole,
+      analysis.competencyTags,
+      analysis.projectType,
+    );
 
     slides.push({
       eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · EXECUTIVE SUMMARY`,
       title: analysis.projectTitle,
       body: truncate(portfolio?.keyMessage ?? analysis.oneLineSummary, 230),
       bullets: [
+        roleFitSummary,
+        `포트폴리오 품질: ${projectPortfolioAudit.score}/100 · ${projectPortfolioAudit.level}`,
+        `근거 신뢰도: ${evidenceAudit.score}/100 · ${evidenceAudit.level}`,
+        `분석 정확도: ${accuracyReport.overallScore}/100 · ${accuracyReport.level}`,
         `유형: ${analysis.projectType}`,
         `핵심 문제: ${truncate(analysis.problemDefinition, 150)}`,
         `핵심 인사이트: ${truncate(analysis.keyInsight, 150)}`,
-        `역량 태그: ${analysis.competencyTags.slice(0, 4).join(", ")}`,
+      ],
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · PORTFOLIO QUALITY`,
+      title: "포트폴리오 구조 감사",
+      body: projectPortfolioAudit.summary,
+      bullets: [
+        `품질 점수: ${projectPortfolioAudit.score}/100 · ${projectPortfolioAudit.level}`,
+        ...projectPortfolioAudit.criteria
+          .slice(0, 4)
+          .map(
+            (item) =>
+              `${item.status} · ${item.label}: ${item.score}/100 · ${item.evidence}`,
+          ),
+      ],
+    });
+
+    chunkArray(projectPortfolioAudit.criteria, 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · PORTFOLIO QUALITY ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "포트폴리오 품질 세부 기준",
+        body:
+          chunkIndex === 0
+            ? "포트폴리오가 채용 담당자에게 문제 해결 역량으로 읽히는지 항목별로 점검합니다."
+            : "포트폴리오 품질 세부 기준 계속",
+        bullets: items.map(
+          (item) =>
+            `${item.label} ${item.score}/100 · ${item.status}: ${item.recommendation}`,
+        ),
+      });
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · EVIDENCE AUDIT`,
+      title: "근거 신뢰도와 제출 준비도",
+      body: `이 프로젝트의 근거 신뢰도는 ${evidenceAudit.score}/100(${evidenceAudit.level}), 분석 정확도는 ${accuracyReport.overallScore}/100(${accuracyReport.level})입니다. 높음 ${evidenceAudit.confidenceCounts["높음"]}개, 중간 ${evidenceAudit.confidenceCounts["중간"]}개, 낮음 ${evidenceAudit.confidenceCounts["낮음"]}개 항목으로 구성되어 있습니다.`,
+      bullets: [
+        `텍스트 미리보기: ${evidenceAudit.hasTextPreview ? "있음" : "없음"}`,
+        `정량 근거: ${evidenceAudit.hasQuantitativeEvidence ? "확인" : "부족"}`,
+        `보완 질문 답변: ${evidenceAudit.answeredQuestions}/${evidenceAudit.totalQuestions}`,
+        `주장 검증: ${accuracyReport.sourceCoverage.verifiedClaims}/${accuracyReport.sourceCoverage.totalClaims}개 · 직접 근거 ${accuracyReport.sourceCoverage.directEvidenceItems}개 · 추론 ${accuracyReport.sourceCoverage.inferredItems}개`,
+        `생성 상태: 포트폴리오 ${artifactStatusLabel(evidenceAudit.generatedArtifacts.portfolio)} · 피드백 ${artifactStatusLabel(evidenceAudit.generatedArtifacts.feedback)} · 이력서 ${artifactStatusLabel(evidenceAudit.generatedArtifacts.resume)}`,
+      ],
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · ACCURACY REVIEW`,
+      title: "분석 정확도와 주장 검증",
+      body: truncate(accuracyReport.summary, 260),
+      bullets: [
+        `검토 항목: ${accuracyReport.sourceCoverage.reviewedItems}개`,
+        `직접 근거: ${accuracyReport.sourceCoverage.directEvidenceItems}개`,
+        `정량 근거: ${accuracyReport.sourceCoverage.quantitativeEvidenceItems}개`,
+        `검증된 주장: ${accuracyReport.sourceCoverage.verifiedClaims}/${accuracyReport.sourceCoverage.totalClaims}개`,
+        `텍스트 근거량: ${accuracyReport.sourceCoverage.textPreviewCharacters}자`,
+      ],
+    });
+
+    chunkArray(accuracyReport.claimChecks, 4).forEach((checks, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · ACCURACY CLAIMS ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "주장별 정확도 검토",
+        body:
+          chunkIndex === 0
+            ? "최종본에서 확정 표현으로 쓸 수 있는 주장과 보완 후 써야 하는 주장을 구분합니다."
+            : "주장별 정확도 검토 계속",
+        bullets: checks.map(
+          (check) =>
+            `${check.label} · ${check.evidenceLevel} · 정확도 ${check.confidence}: ${check.accuracyRisk} / 검증: ${check.verificationAction}`,
+        ),
+      });
+    });
+
+    if (accuracyReport.limitations.length || accuracyReport.verificationActions.length) {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · ACCURACY ACTIONS`,
+        title: "정확도 한계와 제출 전 검증 액션",
+        body:
+          "아래 항목은 전문가 관점에서 최종 제출 전 반드시 확인해야 하는 정확도 리스크입니다.",
+        bullets: [
+          ...accuracyReport.limitations.map((limitation) => `한계: ${limitation}`),
+          ...accuracyReport.verificationActions.map((action) => `액션: ${action}`),
+        ],
+      });
+    }
+
+    if (evidenceAudit.risks.length || evidenceAudit.requiredActions.length) {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · EVIDENCE AUDIT`,
+        title: "근거 리스크와 보완 액션",
+        body:
+          "아래 항목은 최종본에서 확정 성과처럼 쓰면 면접 검증에 취약해질 수 있습니다. 보완 전에는 기대효과, 가설, 검증 과제로 라벨링합니다.",
+        bullets: [
+          ...evidenceAudit.risks.map((risk) => `리스크: ${risk}`),
+          ...evidenceAudit.requiredActions.map((action) => `보완: ${action}`),
+        ],
+      });
+    }
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · PORTFOLIO CASE`,
+      title: "포트폴리오 케이스 스터디",
+      body: truncate(portfolio?.summary ?? roleFitSummary, 240),
+      bullets: [
+        `문제: ${truncate(portfolio?.problem ?? analysis.problemDefinition, 145)}`,
+        `인사이트: ${truncate(portfolio?.insight ?? analysis.keyInsight, 145)}`,
+        `전략: ${truncate(portfolio?.strategy ?? analysis.strategy, 145)}`,
+        `실행: ${truncate(portfolio?.execution ?? analysis.execution, 145)}`,
+        `결과: ${truncate(portfolio?.result ?? analysis.result, 145)}`,
       ],
     });
 
@@ -242,6 +662,23 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
     });
 
     slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · FULL ANALYSIS MAP`,
+      title: "전체 분석 내용 요약",
+      body: truncate(
+        portfolioSummary ||
+          `${analysis.background} ${analysis.problemDefinition} ${analysis.keyInsight} ${analysis.strategy} ${analysis.execution} ${analysis.result}`,
+        260,
+      ),
+      bullets: [
+        `배경: ${truncate(analysis.background, 135)}`,
+        `타깃: ${truncate(analysis.targetAudience, 135)}`,
+        `역량 태그: ${analysis.competencyTags.slice(0, 5).join(", ")}`,
+        `포트폴리오 추천: ${truncate(analysis.portfolioRecommendation, 135)}`,
+        `전문가 코멘트: ${truncate(analysis.expertComment, 135)}`,
+      ],
+    });
+
+    slides.push({
       eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · SOURCE REVIEW`,
       title: "첨부 파일 검토와 보완 과제",
       bullets: [
@@ -249,6 +686,44 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
         truncate(sourceReview?.evidenceQuality ?? "성과 수치와 출처는 추가 확인이 필요합니다.", 170),
         ...analysis.missingQuestions.slice(0, 3).map((question) => `보완 질문: ${question}`),
       ],
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · ITEM-BY-ITEM REVIEW`,
+      title: "항목별 정밀 분석",
+      body: truncate(
+        detailedReview.coverageSummary,
+        240,
+      ),
+      bullets: detailedReview.itemReviews.slice(0, 5).map(
+        (item) =>
+          `${item.sourceLabel} · ${item.analysisFocus}: ${truncate(item.consultantDiagnosis, 150)}`,
+      ),
+    });
+
+    chunkArray(detailedReview.itemReviews, 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · APPENDIX ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "전체 항목별 근거 감사",
+        body:
+          chunkIndex === 0
+            ? detailedReview.coverageSummary
+            : "이전 슬라이드에 이어 항목별 원문/구성요소, 진단, 활용 방식과 추가 확인 항목을 정리합니다.",
+        bullets: items.map(
+          (item) =>
+            `${item.order}. ${item.sourceLabel} · ${item.analysisFocus} · 신뢰도 ${item.confidence}: ${item.consultantDiagnosis} / 추가 확인: ${item.requiredFollowUp}`,
+        ),
+      });
+    });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · MISSING EVIDENCE`,
+      title: "부족한 근거와 추가 확보 과제",
+      body:
+        "최종본의 신뢰도를 높이려면 아래 근거를 보완해야 합니다. 보완되지 않은 항목은 확정 성과가 아니라 검증 과제로 표기합니다.",
+      bullets: detailedReview.missingEvidence.map(
+        (gap) => `${gap.area}: ${gap.issue} / 필요 근거: ${gap.requiredEvidence}`,
+      ),
     });
 
     slides.push({
@@ -271,11 +746,91 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
           .map((angle) => `포트폴리오 각도: ${angle}`) ?? []),
       ],
     });
+
+    slides.push({
+      eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · FINAL PORTFOLIO COPY`,
+      title: "최종 포트폴리오 문장",
+      body: truncate(
+        portfolio?.keyMessage ??
+          `${analysis.projectTitle}에서 ${analysis.competencyTags
+            .slice(0, 3)
+            .join(", ")} 역량을 바탕으로 문제 정의부터 실행안까지 구조화했습니다.`,
+        250,
+      ),
+      bullets: [
+        `PPT 문구: ${truncate(portfolio?.pptCopy ?? analysis.oneLineSummary, 155)}`,
+        `Notion 문구: ${truncate(portfolio?.notionCopy ?? analysis.portfolioRecommendation, 155)}`,
+        `역할 문장: ${truncate(portfolio?.role ?? analysis.userRole, 155)}`,
+        `스킬: ${analysis.competencyTags.slice(0, 5).join(", ")}`,
+      ],
+    });
+
+    if (portfolio?.caseStudy || portfolio?.onePageSummary) {
+      chunkArray(
+        (portfolio.caseStudy ?? portfolio.onePageSummary)
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .flatMap((line) => splitLongText(line, 135)),
+        4,
+      ).forEach((lines, chunkIndex) => {
+        slides.push({
+          eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · FINAL CASE STUDY ${String(chunkIndex + 1).padStart(2, "0")}`,
+          title: "최종 포트폴리오 케이스 스터디",
+          body:
+            chunkIndex === 0
+              ? "Portfolio 페이지에서 생성하거나 수정한 최신 케이스 스터디를 최종본 부록으로 포함합니다."
+              : "케이스 스터디 계속",
+          bullets: lines,
+        });
+      });
+    }
+
+    chunkArray(coverLetterBullets(coverLetter), 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · COVER LETTER ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "자기소개서 산출물",
+        body:
+          "프로젝트 경험이 지원 직무 문항으로 어떻게 전환되는지 확인하는 부록입니다.",
+        bullets: items,
+      });
+    });
+
+    chunkArray(resumeBullets(resume), 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · RESUME ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "이력서 bullet point",
+        body:
+          "채용 담당자가 빠르게 읽을 수 있도록 문제, 행동, 결과와 역량 키워드를 압축한 문장입니다.",
+        bullets: items,
+      });
+    });
+
+    chunkArray(feedbackBullets(feedback), 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · FEEDBACK ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "전문가 피드백과 수정 제안",
+        body:
+          "최종 제출 전 직무 적합성, 근거 강도, 역할 선명도와 문장 설득력을 점검한 결과입니다.",
+        bullets: items,
+      });
+    });
+
+    chunkArray(interviewBullets(interview), 4).forEach((items, chunkIndex) => {
+      slides.push({
+        eyebrow: `PROJECT ${String(index + 1).padStart(2, "0")} · INTERVIEW ${String(chunkIndex + 1).padStart(2, "0")}`,
+        title: "면접 예상 질문과 답변 가이드",
+        body:
+          "프로젝트 근거와 한계를 면접에서 방어할 수 있도록 대표 질문, 꼬리질문과 답변 가이드를 포함합니다.",
+        bullets: items,
+      });
+    });
   });
 
   slides.push({
     eyebrow: "INTEGRATED POSITIONING",
     title: "통합 직무 역량 포지셔닝",
+    body: roleDirection,
     bullets: [
       `반복 확인 역량: ${allSkills.slice(0, 7).join(", ") || "분석 결과 생성 필요"}`,
       workspace.personalBrand?.positioning ??
@@ -287,7 +842,7 @@ function buildSlides(workspace: ProofolioWorkspace): SlideBlock[] {
 
   slides.push({
     eyebrow: "NEXT REVISION PRIORITIES",
-    title: "최종 보완 우선순위",
+    title: `${targetRole} 지원 전 최종 보완 우선순위`,
     bullets: [
       "각 프로젝트의 성과 문장에 기준 시점, 비교 대상, 수치와 출처를 추가",
       "팀 활동과 본인의 직접 의사결정, 작성 산출물, 조율 범위를 분리",

@@ -1,5 +1,13 @@
 import type {
+  AccuracyClaimCheck,
+  AccuracyEvidenceLevel,
+  AnalysisAccuracyReport,
+  CareerInputEntry,
+  CareerInputType,
   CoverLetterOutput,
+  DetailedAnalysisReview,
+  DetailedReviewGap,
+  DetailedReviewItem,
   ExpertAnalysisReview,
   ExpertEvidenceReview,
   FeedbackScore,
@@ -41,6 +49,21 @@ const employmentTypes = [
   "프리랜서",
   "협의 가능",
 ] as const;
+
+const careerInputTypes: CareerInputType[] = [
+  "경험 기록",
+  "자기소개서 초안",
+  "이력서 메모",
+  "면접 메모",
+];
+
+const detailedReviewConfidence = ["높음", "중간", "낮음"] as const;
+const accuracyEvidenceLevels: AccuracyEvidenceLevel[] = [
+  "직접 근거",
+  "부분 근거",
+  "추론",
+  "검증 필요",
+];
 
 const RESET_PROJECT_DATA_SCHEMA_VERSION = 4;
 const legacySampleProfile = {
@@ -127,6 +150,26 @@ function isUserProfile(value: unknown): value is UserProfile {
   );
 }
 
+function isCareerInputEntry(value: unknown): value is CareerInputEntry {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.id) &&
+    careerInputTypes.includes(value.type as CareerInputType) &&
+    isString(value.title) &&
+    isString(value.targetRole) &&
+    isString(value.companyName) &&
+    isString(value.situation) &&
+    isString(value.action) &&
+    isString(value.result) &&
+    isString(value.learned) &&
+    isString(value.content) &&
+    isStringArray(value.tags) &&
+    isString(value.createdAt) &&
+    isString(value.updatedAt)
+  );
+}
+
 function isUploadedFile(value: unknown): value is UploadedFile {
   if (!isRecord(value)) return false;
 
@@ -183,6 +226,100 @@ function isExpertAnalysisReview(
   );
 }
 
+function isDetailedReviewItem(
+  value: unknown,
+): value is DetailedReviewItem {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.id) &&
+    typeof value.order === "number" &&
+    isString(value.sourceLabel) &&
+    isString(value.sourceExcerpt) &&
+    isString(value.analysisFocus) &&
+    isString(value.consultantDiagnosis) &&
+    isString(value.portfolioImplication) &&
+    isString(value.requiredFollowUp) &&
+    detailedReviewConfidence.includes(
+      value.confidence as (typeof detailedReviewConfidence)[number],
+    )
+  );
+}
+
+function isDetailedReviewGap(
+  value: unknown,
+): value is DetailedReviewGap {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.area) &&
+    isString(value.issue) &&
+    isString(value.requiredEvidence)
+  );
+}
+
+function isDetailedAnalysisReview(
+  value: unknown,
+): value is DetailedAnalysisReview {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.reviewMethod) &&
+    isString(value.coverageSummary) &&
+    Array.isArray(value.itemReviews) &&
+    value.itemReviews.every(isDetailedReviewItem) &&
+    isStringArray(value.synthesisPoints) &&
+    Array.isArray(value.missingEvidence) &&
+    value.missingEvidence.every(isDetailedReviewGap)
+  );
+}
+
+function isAccuracyClaimCheck(
+  value: unknown,
+): value is AccuracyClaimCheck {
+  if (!isRecord(value)) return false;
+
+  return (
+    isString(value.id) &&
+    isString(value.label) &&
+    isString(value.claim) &&
+    isString(value.evidenceSource) &&
+    accuracyEvidenceLevels.includes(
+      value.evidenceLevel as AccuracyEvidenceLevel,
+    ) &&
+    detailedReviewConfidence.includes(
+      value.confidence as (typeof detailedReviewConfidence)[number],
+    ) &&
+    isString(value.accuracyRisk) &&
+    isString(value.verificationAction)
+  );
+}
+
+function isAnalysisAccuracyReport(
+  value: unknown,
+): value is AnalysisAccuracyReport {
+  if (!isRecord(value) || !isRecord(value.sourceCoverage)) return false;
+
+  return (
+    typeof value.overallScore === "number" &&
+    detailedReviewConfidence.includes(
+      value.level as (typeof detailedReviewConfidence)[number],
+    ) &&
+    isString(value.summary) &&
+    typeof value.sourceCoverage.reviewedItems === "number" &&
+    typeof value.sourceCoverage.directEvidenceItems === "number" &&
+    typeof value.sourceCoverage.inferredItems === "number" &&
+    typeof value.sourceCoverage.quantitativeEvidenceItems === "number" &&
+    typeof value.sourceCoverage.verifiedClaims === "number" &&
+    typeof value.sourceCoverage.totalClaims === "number" &&
+    typeof value.sourceCoverage.textPreviewCharacters === "number" &&
+    Array.isArray(value.claimChecks) &&
+    value.claimChecks.every(isAccuracyClaimCheck) &&
+    isStringArray(value.limitations) &&
+    isStringArray(value.verificationActions)
+  );
+}
+
 function isProjectAnalysis(value: unknown): value is ProjectAnalysis {
   if (!isRecord(value)) return false;
 
@@ -208,7 +345,11 @@ function isProjectAnalysis(value: unknown): value is ProjectAnalysis {
     (value.sourceReview === undefined ||
       isSourceReviewReport(value.sourceReview)) &&
     (value.expertReview === undefined ||
-      isExpertAnalysisReview(value.expertReview))
+      isExpertAnalysisReview(value.expertReview)) &&
+    (value.detailedReview === undefined ||
+      isDetailedAnalysisReview(value.detailedReview)) &&
+    (value.accuracyReport === undefined ||
+      isAnalysisAccuracyReport(value.accuracyReport))
   );
 }
 
@@ -417,6 +558,7 @@ export function createEmptyProofolioWorkspace(): ProofolioWorkspace {
     feedbackScores: {},
     interviewQuestions: {},
     questionAnswers: {},
+    careerInputs: [],
     personalBrand: undefined,
     skillAnalysis: undefined,
     updatedAt: new Date().toISOString(),
@@ -460,6 +602,7 @@ export function normalizeProofolioWorkspace(
       feedbackScores: { ...fallback.feedbackScores },
       interviewQuestions: { ...fallback.interviewQuestions },
       questionAnswers: { ...fallback.questionAnswers },
+      careerInputs: [...fallback.careerInputs],
       personalBrand: fallback.personalBrand,
       skillAnalysis: fallback.skillAnalysis,
     };
@@ -509,6 +652,9 @@ export function normalizeProofolioWorkspace(
       isInterviewQuestionList,
     ),
     questionAnswers: normalizeQuestionAnswers(value.questionAnswers),
+    careerInputs: Array.isArray(value.careerInputs)
+      ? value.careerInputs.filter(isCareerInputEntry)
+      : fallback.careerInputs,
     personalBrand: isPersonalBrandProfile(value.personalBrand)
       ? value.personalBrand
       : undefined,

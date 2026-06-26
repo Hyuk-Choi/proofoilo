@@ -3,6 +3,9 @@ import type {
   ProjectAnalysis,
 } from "../../types/proofolio";
 import type { GenerationOptions } from "./contracts";
+import {
+  buildEvidenceBoundaryNote,
+} from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
@@ -51,10 +54,16 @@ export function buildCoverLetterOutput(
         .slice(0, 2)
         .join(" ")}`
     : "현재 결과는 분석 자료를 기반으로 한 제안 또는 기대효과이며, 실행 후 성과로 표현하기 전 기준 시점·비교 대상·수치를 추가해야 합니다.";
+  const evidenceBoundary = buildEvidenceBoundaryNote(
+    `${analysis.result} ${analysis.userRole} ${evidence.join(" ")}`,
+  );
+  const structuredExperienceFrame =
+    `${analysis.projectTitle} 경험은 문제 정의, 대안 비교, 본인 판단, 실행 결과와 남은 검증 과제를 분리해 설명할 때 직무 역량이 가장 선명하게 전달됩니다.`;
 
   return {
     motivation: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `${companyName}에서 고객 과제를 근거 기반의 가설과 실행 우선순위로 전환하는 ${targetRole}로 기여하고자 지원했습니다.`,
         `${analysis.projectTitle} 프로젝트에서 해결해야 할 핵심 과제는 다음과 같았습니다. ${problemStatement}`,
         `저는 이를 아이디어 부족이 아니라 고객 맥락과 경쟁 대안을 평가할 의사결정 기준이 불명확한 문제로 재정의했습니다.`,
@@ -69,6 +78,7 @@ export function buildCoverLetterOutput(
     ),
     competency: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `저의 핵심 직무 역량은 ${coreSkills}이며, 강점은 분석 결과를 의사결정 기준과 실행 과제로 연결하는 데 있습니다.`,
         `${analysis.projectTitle}에서 다음 과제를 해결해야 했습니다. ${problemStatement}`,
         `먼저 자료를 시장, 고객, 경쟁, 실행 조건으로 구분해 정보의 우선순위를 정했습니다.`,
@@ -76,6 +86,7 @@ export function buildCoverLetterOutput(
         `이 판단이 보고서에 머물지 않도록 대안과 우선순위를 포함한 전략으로 구체화했습니다. ${strategyStatement}`,
         `실행 단계에서는 담당 과제와 검증 지표가 드러나도록 구체화했습니다. ${executionStatement}`,
         evidenceSentence,
+        evidenceBoundary,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         `이 과정에서 정보의 양보다 근거의 관련성과 신뢰도를 우선하고, 문제 정의와 실행안을 하나의 논리로 연결했습니다.`,
         `${targetRole} 업무에서도 고객 행동과 성과 지표를 함께 읽고 우선순위가 명확한 실행안을 제시하겠습니다.`,
@@ -84,6 +95,7 @@ export function buildCoverLetterOutput(
     ),
     achievement: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `${analysis.projectTitle}에서 만든 핵심 성과는 불명확한 과제를 검토 가능한 의사결정 구조로 전환한 것입니다.`,
         `초기 과제는 다음과 같았습니다. ${problemStatement}`,
         `저는 먼저 목표와 판단 기준을 정리한 뒤 관련 자료를 동일한 기준으로 비교했습니다.`,
@@ -91,6 +103,7 @@ export function buildCoverLetterOutput(
         `이 판단을 전략에 반영했습니다. ${strategyStatement}`,
         `실행 과정은 다음과 같습니다. ${executionStatement}`,
         evidenceSentence,
+        evidenceBoundary,
         `확인된 결과 또는 기대효과는 다음과 같습니다. ${resultStatement}`,
         `저의 직접적인 기여는 다음과 같습니다. ${roleStatement}`,
         `특히 문제 정의, 근거 선별, 대안 비교와 실행 우선순위가 하나의 흐름으로 이어지도록 만든 점이 저의 직접 기여입니다.`,
@@ -100,6 +113,7 @@ export function buildCoverLetterOutput(
     ),
     collaboration: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `${analysis.projectTitle} 프로젝트에서 저의 역할은 다음과 같았습니다. ${roleStatement}`,
         `협업에서는 개인의 선호보다 고객 문제, 기대 효과, 실행 가능성을 공통 판단 기준으로 삼았습니다.`,
         `서로 다른 의견은 해당 기준에 따라 비교하고, 남은 쟁점은 추가 확인이 필요한 가설로 분리했습니다.`,
@@ -116,6 +130,7 @@ export function buildCoverLetterOutput(
     ),
     growth: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `${analysis.projectTitle}를 통해 분석의 완성도는 정보량이 아니라 의사결정 가능성으로 판단해야 한다는 기준을 세웠습니다.`,
         `프로젝트의 핵심 과제는 다음과 같았습니다. ${problemStatement}`,
         `자료를 시장, 고객, 경쟁, 실행 조건으로 분류하고 의사결정에 직접 영향을 주는 근거부터 검토했습니다.`,
@@ -130,6 +145,7 @@ export function buildCoverLetterOutput(
     ),
     futurePlan: buildWithinLimit(
       [
+        structuredExperienceFrame,
         `입사 후에는 ${analysis.competencyTags[0]}과 ${analysis.competencyTags[1] ?? "실행력"} 역량을 활용해 고객 반응과 시장 변화를 검증 가능한 과제로 구조화하겠습니다.`,
         `첫 30일에는 ${companyName}의 핵심 고객, 경쟁 환경, 기존 캠페인 데이터와 팀의 성과 기준을 파악하겠습니다.`,
         `90일 안에는 고객 행동과 메시지 반응을 연결한 우선 가설을 제안하고, 기준선과 검증 지표가 포함된 실행안을 만들겠습니다.`,

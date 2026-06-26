@@ -1825,6 +1825,7 @@ const STORAGE = {
 };
 
 const state = {
+  todayKey: localDateKey(),
   dailyExpressions: [],
   activeIndex: 0,
   completed: new Set(),
@@ -1877,6 +1878,7 @@ let player = null;
 let transcriptTimer = null;
 let toastTimer = null;
 let deferredInstallPrompt = null;
+let dailyRefreshTimer = null;
 
 function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -1920,8 +1922,7 @@ function alternatingPool(items, dateKey) {
   return items.filter((_, index) => index % 2 === parity);
 }
 
-function getDailyExpressions() {
-  const dateKey = localDateKey();
+function getDailyExpressions(dateKey = state.todayKey) {
   const seed = dateSeed(dateKey);
   const allowedIds = new Set(difficultyExpressionIds[state.difficulty]);
   const difficultyPool = allNaturalExpressions.filter((expression) =>
@@ -1938,8 +1939,7 @@ function getDailyExpressions() {
   return [featured, ...seededShuffle(remaining, seed).slice(0, 4)];
 }
 
-function getDailyBusinessExpressions() {
-  const dateKey = localDateKey();
+function getDailyBusinessExpressions(dateKey = state.todayKey) {
   const pool = alternatingPool(businessExpressionPool, dateKey);
   return seededShuffle(pool, dateSeed(dateKey) + 2026).slice(0, 5);
 }
@@ -1948,8 +1948,8 @@ function getProgressStore() {
   return JSON.parse(localStorage.getItem(STORAGE.progress) || "{}");
 }
 
-function dailyProgressKey() {
-  return `${localDateKey()}:${state.difficulty}`;
+function dailyProgressKey(dateKey = state.todayKey) {
+  return `${dateKey}:${state.difficulty}`;
 }
 
 function saveProgress() {
@@ -1958,9 +1958,9 @@ function saveProgress() {
   localStorage.setItem(STORAGE.progress, JSON.stringify(store));
 }
 
-function loadTodayProgress() {
+function loadTodayProgress(dateKey = state.todayKey) {
   const store = getProgressStore();
-  state.completed = new Set(store[dailyProgressKey()] || []);
+  state.completed = new Set(store[dailyProgressKey(dateKey)] || []);
 }
 
 function renderIcons() {
@@ -1969,13 +1969,65 @@ function renderIcons() {
   }
 }
 
-function setDateHeading() {
+function setDateHeading(dateKey = state.todayKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
   const dateText = new Intl.DateTimeFormat("ko-KR", {
     month: "long",
     day: "numeric",
     weekday: "long",
-  }).format(new Date());
+  }).format(new Date(year, month - 1, day));
   document.querySelector("#today-date").textContent = dateText.toUpperCase();
+}
+
+function msUntilNextLocalDay(now = new Date()) {
+  const nextDay = new Date(now);
+  nextDay.setHours(24, 0, 2, 0);
+  return Math.max(nextDay.getTime() - now.getTime(), 1000);
+}
+
+function refreshDailyContent({ announce = false } = {}) {
+  const currentKey = localDateKey();
+  if (currentKey === state.todayKey) return false;
+
+  state.todayKey = currentKey;
+  state.activeIndex = 0;
+  businessState.activeIndex = 0;
+  state.dailyExpressions = getDailyExpressions(currentKey);
+  businessState.dailyExpressions = getDailyBusinessExpressions(currentKey);
+  loadTodayProgress(currentKey);
+  loadBusinessProgress(currentKey);
+
+  setDateHeading(currentKey);
+  renderCurrentLesson();
+  renderBusinessLesson();
+  renderProgress();
+  renderStreak();
+  renderWeek();
+  if (document.querySelector("#saved-view")?.classList.contains("active")) {
+    renderSaved();
+  }
+  renderIcons();
+
+  if (announce) {
+    showToast("날짜가 바뀌어 오늘의 표현 5개를 새로 업데이트했어요.");
+  }
+  return true;
+}
+
+function scheduleDailyRefresh() {
+  clearTimeout(dailyRefreshTimer);
+  dailyRefreshTimer = window.setTimeout(() => {
+    refreshDailyContent({ announce: true });
+    scheduleDailyRefresh();
+  }, msUntilNextLocalDay());
+}
+
+function setupDailyContentUpdates() {
+  scheduleDailyRefresh();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshDailyContent({ announce: true });
+  });
+  window.addEventListener("focus", () => refreshDailyContent({ announce: true }));
 }
 
 function renderLessonList() {
@@ -2058,7 +2110,7 @@ function renderQuiz(expression) {
 
   const options = seededShuffle(
     [expression.phrase, ...expression.distractors],
-    dateSeed(localDateKey()) + state.activeIndex * 101,
+    dateSeed(state.todayKey) + state.activeIndex * 101,
   );
   const optionsWrap = document.querySelector("#quiz-options");
   optionsWrap.innerHTML = options
@@ -2108,14 +2160,14 @@ function getBusinessProgressStore() {
   return JSON.parse(localStorage.getItem(STORAGE.businessProgress) || "{}");
 }
 
-function loadBusinessProgress() {
+function loadBusinessProgress(dateKey = state.todayKey) {
   const store = getBusinessProgressStore();
-  businessState.completed = new Set(store[localDateKey()] || []);
+  businessState.completed = new Set(store[dateKey] || []);
 }
 
 function saveBusinessProgress() {
   const store = getBusinessProgressStore();
-  store[localDateKey()] = [...businessState.completed];
+  store[state.todayKey] = [...businessState.completed];
   localStorage.setItem(STORAGE.businessProgress, JSON.stringify(store));
 }
 
@@ -2165,7 +2217,7 @@ function renderBusinessQuiz(expression) {
 
   const options = seededShuffle(
     [expression.phrase, ...expression.distractors],
-    dateSeed(localDateKey()) + businessState.activeIndex * 211,
+    dateSeed(state.todayKey) + businessState.activeIndex * 211,
   );
   const optionsWrap = document.querySelector("#business-quiz-options");
   optionsWrap.innerHTML = options
@@ -2260,7 +2312,7 @@ function toggleBusinessBookmark() {
 
 function markStudyDate() {
   const dates = new Set(JSON.parse(localStorage.getItem(STORAGE.studyDates) || "[]"));
-  dates.add(localDateKey());
+  dates.add(state.todayKey);
   localStorage.setItem(STORAGE.studyDates, JSON.stringify([...dates]));
   renderStreak();
   renderWeek();
@@ -2404,6 +2456,7 @@ function renderSaved() {
 }
 
 function switchView(viewName) {
+  refreshDailyContent({ announce: true });
   if (viewName !== "conversation") stopConversationRecognition();
   document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
   document.querySelector(`#${viewName}-view`)?.classList.add("active");
@@ -2442,12 +2495,13 @@ function renderDifficulty() {
 }
 
 function setDifficulty(level) {
+  refreshDailyContent({ announce: true });
   if (!difficultyExpressionIds[level] || level === state.difficulty) return;
   state.difficulty = level;
   localStorage.setItem(STORAGE.difficulty, level);
   state.activeIndex = 0;
-  state.dailyExpressions = getDailyExpressions();
-  loadTodayProgress();
+  state.dailyExpressions = getDailyExpressions(state.todayKey);
+  loadTodayProgress(state.todayKey);
   renderDifficulty();
   renderCurrentLesson();
   renderProgress();
@@ -2557,7 +2611,7 @@ function setupInstallExperience() {
   });
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    navigator.serviceWorker.register("sw.js").catch(() => {
       console.warn("Fiveish service worker registration failed.");
     });
   }
@@ -3691,11 +3745,12 @@ function bindEvents() {
 }
 
 function init() {
-  state.dailyExpressions = getDailyExpressions();
-  businessState.dailyExpressions = getDailyBusinessExpressions();
-  loadTodayProgress();
-  loadBusinessProgress();
-  setDateHeading();
+  state.todayKey = localDateKey();
+  state.dailyExpressions = getDailyExpressions(state.todayKey);
+  businessState.dailyExpressions = getDailyBusinessExpressions(state.todayKey);
+  loadTodayProgress(state.todayKey);
+  loadBusinessProgress(state.todayKey);
+  setDateHeading(state.todayKey);
   renderDifficulty();
   renderCurrentLesson();
   renderBusinessLesson();
@@ -3708,6 +3763,7 @@ function init() {
   setupScriptEditor();
   setupInstallExperience();
   bindEvents();
+  setupDailyContentUpdates();
   resetConversation();
   renderIcons();
 

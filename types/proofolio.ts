@@ -41,6 +41,69 @@ export type ExpertAnalysisReview = {
   portfolioAngles: string[];
 };
 
+export type DetailedReviewConfidence = "높음" | "중간" | "낮음";
+
+export type AccuracyEvidenceLevel =
+  | "직접 근거"
+  | "부분 근거"
+  | "추론"
+  | "검증 필요";
+
+export type AccuracyClaimCheck = {
+  id: string;
+  label: string;
+  claim: string;
+  evidenceSource: string;
+  evidenceLevel: AccuracyEvidenceLevel;
+  confidence: DetailedReviewConfidence;
+  accuracyRisk: string;
+  verificationAction: string;
+};
+
+export type AnalysisAccuracyReport = {
+  overallScore: number;
+  level: DetailedReviewConfidence;
+  summary: string;
+  sourceCoverage: {
+    reviewedItems: number;
+    directEvidenceItems: number;
+    inferredItems: number;
+    quantitativeEvidenceItems: number;
+    verifiedClaims: number;
+    totalClaims: number;
+    textPreviewCharacters: number;
+  };
+  claimChecks: AccuracyClaimCheck[];
+  limitations: string[];
+  verificationActions: string[];
+};
+
+export type DetailedReviewItem = {
+  id: string;
+  order: number;
+  sourceLabel: string;
+  sourceExcerpt: string;
+  analysisFocus: string;
+  consultantDiagnosis: string;
+  portfolioImplication: string;
+  requiredFollowUp: string;
+  confidence: DetailedReviewConfidence;
+};
+
+export type DetailedReviewGap = {
+  area: string;
+  issue: string;
+  requiredEvidence: string;
+};
+
+export type DetailedAnalysisReview = {
+  reviewMethod: string;
+  coverageSummary: string;
+  itemReviews: DetailedReviewItem[];
+  synthesisPoints: string[];
+  missingEvidence: DetailedReviewGap[];
+};
+
 export type ProjectAnalysis = {
   id: string;
   sourceFileName: string;
@@ -62,6 +125,8 @@ export type ProjectAnalysis = {
   missingQuestions: string[];
   sourceReview?: SourceReviewReport;
   expertReview?: ExpertAnalysisReview;
+  detailedReview?: DetailedAnalysisReview;
+  accuracyReport?: AnalysisAccuracyReport;
 };
 
 export type PortfolioOutput = {
@@ -181,6 +246,28 @@ export type EmploymentType =
   | "프리랜서"
   | "협의 가능";
 
+export type CareerInputType =
+  | "경험 기록"
+  | "자기소개서 초안"
+  | "이력서 메모"
+  | "면접 메모";
+
+export type CareerInputEntry = {
+  id: string;
+  type: CareerInputType;
+  title: string;
+  targetRole: string;
+  companyName: string;
+  situation: string;
+  action: string;
+  result: string;
+  learned: string;
+  content: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type UserProfile = {
   name: string;
   englishName: string;
@@ -211,6 +298,7 @@ export type ProofolioWorkspace = {
   feedbackScores: Record<string, FeedbackScore>;
   interviewQuestions: Record<string, InterviewQuestion[]>;
   questionAnswers: Record<string, Record<string, string>>;
+  careerInputs: CareerInputEntry[];
   personalBrand?: PersonalBrandProfile;
   skillAnalysis?: SkillAnalysisReport;
   updatedAt: string;

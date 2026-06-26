@@ -190,6 +190,10 @@ export function useProofolioWorkspace(
       feedbackScores: { ...initialWorkspace.feedbackScores },
       interviewQuestions: { ...initialWorkspace.interviewQuestions },
       questionAnswers: { ...initialWorkspace.questionAnswers },
+      careerInputs: initialWorkspace.careerInputs.map((input) => ({
+        ...input,
+        tags: [...input.tags],
+      })),
       personalBrand: initialWorkspace.personalBrand
         ? {
             ...initialWorkspace.personalBrand,

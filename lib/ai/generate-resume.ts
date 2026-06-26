@@ -2,6 +2,7 @@ import type {
   ProjectAnalysis,
   ResumeBullet,
 } from "../../types/proofolio";
+import { buildEvidenceBoundaryNote } from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   compactSentence,
@@ -70,13 +71,23 @@ function createResumeBulletCopy(analysis: ProjectAnalysis) {
 export function buildResumeBullets(
   analysis: ProjectAnalysis,
 ): ResumeBullet[] {
+  const evidenceBoundary = buildEvidenceBoundaryNote(
+    `${analysis.result} ${analysis.userRole}`,
+  );
+
   return [
     {
       title: `${analysis.projectTitle} | ${analysis.projectType}`,
-      bullets: createResumeBulletCopy(analysis).map(compactSentence),
+      bullets: [
+        ...createResumeBulletCopy(analysis).map(compactSentence),
+        compactSentence(
+          `성과 해석 단계에서 확정 성과와 기대효과를 구분하고, ${evidenceBoundary}`,
+        ),
+      ],
       keywords: [
         ...analysis.competencyTags,
         "문제 정의",
+        "근거 검증",
         "실행안 도출",
       ],
     },

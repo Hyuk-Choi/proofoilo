@@ -2,6 +2,10 @@ import type {
   PersonalBrandProfile,
   ProjectAnalysis,
 } from "../../types/proofolio";
+import {
+  buildConsultantLens,
+  buildEvidenceBoundaryNote,
+} from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   firstSentence,
@@ -115,6 +119,13 @@ export function buildPersonalBrandProfile(
   const primarySkill = rankedSkills[0] ?? "시장 분석";
   const secondarySkill = rankedSkills[1] ?? "전략 기획";
   const projectTitles = analyses.slice(0, 3).map((analysis) => analysis.projectTitle);
+  const representativeAnalysis = analyses[0];
+  const consultantLens = representativeAnalysis
+    ? buildConsultantLens(representativeAnalysis)
+    : "핵심 평가 렌즈: 프로젝트 근거가 확보되면 직무 역량, 판단 기준, 책임 범위를 기준으로 평가합니다.";
+  const evidenceBoundary = buildEvidenceBoundaryNote(
+    analyses.map((analysis) => analysis.result).join(" "),
+  );
   const strengths = rankedSkills.slice(0, 3).map((skill) => ({
     title: skill,
     description: `${describeStrength(skill)} ${
@@ -134,12 +145,12 @@ export function buildPersonalBrandProfile(
     targetRole,
     headline: `${primarySkill}과 ${secondarySkill}을 기반으로 시장 신호를 검증 가능한 전략 과제로 전환하는 ${targetRole}`,
     positioning:
-      "고객과 시장의 핵심 문제를 정의하고, 선택 근거와 실행 우선순위를 함께 제시하는 전략형 마케터로 포지셔닝합니다. 분석 결과를 설명에 머물게 하지 않고 메시지, 채널, 콘텐츠 또는 성과 지표로 연결하는 역량을 핵심 차별점으로 설정합니다.",
+      "고객과 시장의 핵심 문제를 정의하고, 선택 근거와 실행 우선순위를 함께 제시하는 전략형 마케터로 포지셔닝합니다. 분석 결과를 설명에 머물게 하지 않고 메시지, 채널, 콘텐츠 또는 성과 지표로 연결하되, 확인된 사실과 해석한 가설을 구분하는 컨설턴트형 판단 방식을 핵심 차별점으로 설정합니다.",
     professionalSummary:
       `검토한 ${analyses.length}개 프로젝트에서 시장, 고객, 경쟁과 성과 자료를 구조화하고 문제 정의부터 전략·실행안까지 연결한 경험이 확인됩니다. ` +
-      `${joinKoreanList(rankedSkills.slice(0, 4))} 역량이 주요 강점 후보이며, 반복 사례와 수치 근거가 확보된 항목부터 핵심 경쟁력으로 제시하는 것이 적절합니다.`,
+      `${joinKoreanList(rankedSkills.slice(0, 4))} 역량이 주요 강점 후보이며, 반복 사례와 수치 근거가 확보된 항목부터 핵심 경쟁력으로 제시하는 것이 적절합니다. ${consultantLens} ${evidenceBoundary}`,
     valueProposition:
-      "불명확한 과제를 고객과 사업 관점의 의사결정 문제로 재정의하고, 근거의 강도와 한계를 구분해 팀이 검토·실행·측정할 수 있는 전략으로 전환합니다.",
+      "불명확한 과제를 고객과 사업 관점의 의사결정 문제로 재정의하고, 근거의 강도와 한계를 구분해 팀이 검토·실행·측정할 수 있는 전략으로 전환합니다. 성과가 확인되지 않은 항목은 기대효과와 검증 과제로 명확히 분리해 신뢰 가능한 커리어 서사를 만듭니다.",
     strengths,
     keywords: [...new Set([...rankedSkills, "문제 정의", "근거 중심 기획"])]
       .slice(0, 10),

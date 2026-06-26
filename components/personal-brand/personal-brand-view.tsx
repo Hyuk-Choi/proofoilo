@@ -16,8 +16,10 @@ import { useMemo, useRef, useState } from "react";
 import {
   ArtifactResultActions,
   ExampleHint,
+  FieldHelp,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { generatePersonalBrand } from "@/lib/ai";
@@ -179,6 +181,9 @@ export function PersonalBrandView() {
               onChange={(event) => setName(event.target.value)}
               className="h-12 w-full rounded-xl border border-[#dce4ef] bg-[#fafbfd] px-4 text-[13px] font-bold text-[#40536d] outline-none transition focus:border-[#8faef0] focus:bg-white"
             />
+            <FieldHelp>
+              이 이름은 브랜딩 헤드라인, 자기소개, 최종 Export 제목에 사용됩니다.
+            </FieldHelp>
           </label>
           <label>
             <span className="mb-2 flex items-center gap-2 text-[12px] font-extrabold text-[#40536d]">
@@ -190,6 +195,9 @@ export function PersonalBrandView() {
               onChange={(event) => setTargetRole(event.target.value)}
               className="h-12 w-full rounded-xl border border-[#dce4ef] bg-[#fafbfd] px-4 text-[13px] font-bold text-[#40536d] outline-none transition focus:border-[#8faef0] focus:bg-white"
             />
+            <FieldHelp>
+              목표 직무에 따라 같은 경험도 브랜드, 퍼포먼스, 콘텐츠, PM 관점으로 다르게 해석됩니다.
+            </FieldHelp>
           </label>
         </div>
 
@@ -204,6 +212,12 @@ export function PersonalBrandView() {
 
       {profile ? (
         <>
+          <SectionGuide title="브랜딩 결과 읽는 방법">
+            헤드라인은 첫인상, 포지셔닝은 지원 직무에서의 차별점, 핵심 가치
+            제안은 회사가 기대할 수 있는 기여를 뜻합니다. 아래 강점은 반드시
+            실제 프로젝트 근거와 함께 사용해야 설득력이 생깁니다.
+          </SectionGuide>
+
           <section className="pf-card overflow-hidden">
             <div className="bg-[#10213d] px-6 py-8 text-white sm:px-8 sm:py-10">
               <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
@@ -269,6 +283,13 @@ export function PersonalBrandView() {
                   <span className="text-[10px] font-black tracking-[0.13em] text-[#2563eb]">
                     {item.label}
                   </span>
+                  <span className="mt-2 block rounded-xl bg-white px-3 py-2 text-[11px] font-semibold leading-5 text-[#7d8da2] shadow-sm">
+                    {item.key === "positioning"
+                      ? "지원 직무에서 나를 어떤 후보자로 기억하게 할지 정리합니다."
+                      : item.key === "professionalSummary"
+                        ? "여러 프로젝트에서 반복 확인되는 업무 방식과 강점을 요약합니다."
+                        : "회사 입장에서 기대할 수 있는 구체적인 기여 가치를 설명합니다."}
+                  </span>
                   <textarea
                     value={item.value}
                     onChange={(event) =>
@@ -314,6 +335,10 @@ export function PersonalBrandView() {
                         근거 {strength.evidenceProjects.length}개
                       </span>
                     </div>
+                    <p className="mt-2 rounded-xl bg-white px-3 py-2 text-[11px] font-semibold leading-5 text-[#7d8da2] shadow-sm">
+                      이 강점은 자기소개서, 면접 1분 소개, 포트폴리오 첫 페이지에
+                      반복 사용할 수 있는 핵심 메시지입니다.
+                    </p>
                     <textarea
                       value={strength.description}
                       onChange={(event) =>
@@ -373,6 +398,10 @@ export function PersonalBrandView() {
                     </span>
                   ))}
                 </div>
+                <p className="mt-4 rounded-xl bg-[#f8fbff] px-3 py-2 text-[11px] font-semibold leading-5 text-[#66758c]">
+                  추천 직무는 현재 프로젝트 근거와 반복 역량을 기준으로 제안됩니다.
+                  실제 지원 전에는 회사 JD와 키워드를 비교해 조정하세요.
+                </p>
               </section>
 
               <section className="pf-card p-6">
@@ -400,6 +429,10 @@ export function PersonalBrandView() {
                   rows={12}
                   className="pf-editor mt-4 p-4 text-[13px] leading-[1.9]"
                 />
+                <p className="mt-3 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                  1분 자기소개는 헤드라인, 대표 강점, 프로젝트 근거, 지원 직무
+                  연결 순서로 말하면 가장 안정적으로 들립니다.
+                </p>
               </section>
             </div>
           </section>

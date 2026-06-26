@@ -17,9 +17,11 @@ import {
   ArtifactResultActions,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
+import { getProjectPortfolioAudit } from "@/lib/analysis/portfolio-output-audit";
 import { generatePortfolio } from "@/lib/ai";
 import type { PortfolioOutput } from "@/types/proofolio";
 
@@ -69,16 +71,46 @@ const formatFields: Record<PortfolioFormat, EditablePortfolioField> = {
 };
 
 const structureLabels = [
-  "프로젝트명",
-  "한 줄 요약",
-  "문제 정의",
-  "핵심 인사이트",
-  "전략",
-  "실행",
-  "결과",
-  "나의 역할",
-  "직무 역량",
-  "핵심 문장",
+  {
+    label: "프로젝트명",
+    description: "채용 담당자가 프로젝트 성격을 즉시 파악하는 제목입니다.",
+  },
+  {
+    label: "한 줄 요약",
+    description: "문제, 행동, 결과를 한 문장으로 압축한 첫인상입니다.",
+  },
+  {
+    label: "문제 정의",
+    description: "왜 이 프로젝트가 필요했는지 보여주는 출발점입니다.",
+  },
+  {
+    label: "핵심 인사이트",
+    description: "자료를 분석해 도출한 판단 근거와 차별점입니다.",
+  },
+  {
+    label: "전략",
+    description: "인사이트를 실행 방향으로 바꾼 의사결정입니다.",
+  },
+  {
+    label: "실행",
+    description: "직접 수행한 산출물, 조율, 운영 내용을 보여줍니다.",
+  },
+  {
+    label: "결과",
+    description: "성과 수치 또는 검증 가능한 기대효과를 정리합니다.",
+  },
+  {
+    label: "나의 역할",
+    description: "팀 활동 속 본인의 직접 기여 범위를 분리합니다.",
+  },
+  {
+    label: "직무 역량",
+    description: "지원 직무와 연결되는 키워드를 명확히 남깁니다.",
+  },
+  {
+    label: "핵심 문장",
+    description: "PPT, Notion, 면접 답변에 반복 활용할 대표 문장입니다.",
+  },
 ];
 
 function getLegacyCaseStudy(output: PortfolioOutput) {
@@ -126,6 +158,16 @@ function getPortfolioContent(
   return output[formatFields[format]] ?? "";
 }
 
+function getAuditTone(status: string) {
+  if (status === "통과") {
+    return "bg-[#e5f6ef] text-[#168765]";
+  }
+  if (status === "보완 필요") {
+    return "bg-[#fff1d8] text-[#a96a0d]";
+  }
+  return "bg-[#ffe8ec] text-[#c24b5a]";
+}
+
 export function PortfolioView({
   initialAnalysisId,
 }: {
@@ -145,6 +187,11 @@ export function PortfolioView({
 
   const output = workspace.portfolioOutputs[selectedAnalysis.id];
   const content = getPortfolioContent(output, format);
+  const portfolioAudit = getProjectPortfolioAudit({
+    analysis: selectedAnalysis,
+    output,
+    workspace,
+  });
   const selectedFormat =
     outputFormats.find((option) => option.id === format) ?? outputFormats[0];
 
@@ -235,6 +282,11 @@ export function PortfolioView({
             </div>
 
             <div className="p-6 sm:p-7">
+              <SectionGuide title="형식 선택 기준">
+                <strong>1페이지 요약</strong>은 빠른 검토용, <strong>PPT 문구</strong>는
+                발표·제출 덱용, <strong>Notion 정리본</strong>은 웹 포트폴리오용,
+                <strong>상세 케이스 스터디</strong>는 면접 전 깊이 있는 설명 준비에 적합합니다.
+              </SectionGuide>
               <div>
                 <p className="text-[9px] font-black tracking-[0.14em] text-[#7a8ba3]">
                   OUTPUT FORMAT
@@ -307,14 +359,109 @@ export function PortfolioView({
 
             {output ? (
               <div className="p-6 sm:p-7">
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {structureLabels.map((label) => (
-                    <span
-                      key={label}
-                      className="rounded-lg bg-[#f1f4f8] px-2.5 py-1.5 text-[10px] font-extrabold text-[#6d7e94]"
+                <section
+                  className={`mb-5 rounded-2xl border p-5 ${
+                    portfolioAudit.readyForPortfolio
+                      ? "border-[#cfe8df] bg-[#f3fbf8]"
+                      : portfolioAudit.score >= 68
+                        ? "border-[#eadfc5] bg-[#fffbf2]"
+                        : "border-[#f1d7dc] bg-[#fff7f8]"
+                  }`}
+                >
+                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div>
+                      <p className="text-[9px] font-black tracking-[0.14em] text-[#2563eb]">
+                        PORTFOLIO QUALITY AUDIT
+                      </p>
+                      <h4 className="mt-1.5 text-[15px] font-black text-[#263853]">
+                        포트폴리오 구조 완성도
+                      </h4>
+                      <p className="mt-2 text-[12px] leading-6 text-[#68788e]">
+                        {portfolioAudit.summary}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-sm">
+                      <strong className="block text-[26px] font-black tracking-[-0.05em] text-[#10213d]">
+                        {portfolioAudit.score}
+                        <span className="ml-1 text-[12px] text-[#9aa6b7]">
+                          /100
+                        </span>
+                      </strong>
+                      <p className="text-[11px] font-black text-[#52657d]">
+                        {portfolioAudit.level}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {portfolioAudit.criteria.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-2xl border border-white/80 bg-white/80 p-3 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <strong className="text-[11px] font-black text-[#40536d]">
+                            {item.label}
+                          </strong>
+                          <span
+                            className={`rounded-full px-2 py-1 text-[9px] font-black ${getAuditTone(item.status)}`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[14px] font-black text-[#10213d]">
+                          {item.score}/100
+                        </p>
+                        <p className="mt-1 text-[10px] font-semibold leading-5 text-[#7d8da2]">
+                          {item.evidence}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {portfolioAudit.blockers.length ||
+                  portfolioAudit.improvements.length ? (
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      {portfolioAudit.blockers.length ? (
+                        <div className="rounded-2xl bg-white p-4 shadow-sm">
+                          <strong className="text-[12px] font-black text-[#c24b5a]">
+                            반드시 보완
+                          </strong>
+                          <ul className="mt-2 space-y-1.5 text-[11px] font-semibold leading-5 text-[#8a4a54]">
+                            {portfolioAudit.blockers.map((item) => (
+                              <li key={item}>- {item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {portfolioAudit.improvements.length ? (
+                        <div className="rounded-2xl bg-white p-4 shadow-sm">
+                          <strong className="text-[12px] font-black text-[#2563eb]">
+                            권장 보완
+                          </strong>
+                          <ul className="mt-2 space-y-1.5 text-[11px] font-semibold leading-5 text-[#55739b]">
+                            {portfolioAudit.improvements.map((item) => (
+                              <li key={item}>- {item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </section>
+                <div className="mb-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                  {structureLabels.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-xl border border-[#e4eaf2] bg-[#f8fafc] px-3 py-2.5"
                     >
-                      {label}
-                    </span>
+                      <strong className="block text-[11px] font-black text-[#40536d]">
+                        {item.label}
+                      </strong>
+                      <span className="mt-1 block text-[10px] font-semibold leading-4 text-[#7d8da2]">
+                        {item.description}
+                      </span>
+                    </div>
                   ))}
                 </div>
                 <textarea

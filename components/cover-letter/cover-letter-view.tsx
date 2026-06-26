@@ -18,8 +18,10 @@ import {
   AnalysisProjectPicker,
   ArtifactPageHeader,
   ArtifactResultActions,
+  FieldHelp,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
@@ -241,6 +243,11 @@ export function CoverLetterView({
                     </option>
                   ))}
                 </select>
+                <FieldHelp>
+                  선택한 직무에 따라 강조 역량이 바뀝니다. 예를 들어 퍼포먼스
+                  마케터는 지표·실험·개선, 브랜드 마케터는 시장 이해와
+                  포지셔닝을 더 앞에 둡니다.
+                </FieldHelp>
               </label>
 
               <div>
@@ -263,6 +270,10 @@ export function CoverLetterView({
                     </button>
                   ))}
                 </div>
+                <FieldHelp>
+                  500자는 핵심 압축, 700자는 표준 자기소개서, 1000자는 배경과
+                  행동을 더 자세히 설명할 때 적합합니다.
+                </FieldHelp>
               </div>
             </div>
 
@@ -305,6 +316,9 @@ export function CoverLetterView({
                         <span className="mt-2 block text-[10px] leading-5 text-[#6b7c92]">
                           {item.example}
                         </span>
+                        <span className="mt-2 block rounded-xl bg-white px-3 py-2 text-[10px] font-semibold leading-5 text-[#66758c] shadow-sm">
+                          평가 포인트: 경험이 직무 요구 역량과 자연스럽게 이어지는지 확인합니다.
+                        </span>
                       </span>
                     </button>
                   );
@@ -312,6 +326,13 @@ export function CoverLetterView({
               </div>
             </div>
           </section>
+
+          <SectionGuide title="작성 기준">
+            각 문단은 <strong>문제 상황</strong>, <strong>내가 한 행동</strong>,
+            <strong>결과 또는 배운 판단 기준</strong>이 보이도록 구성됩니다.
+            추상적인 성실함보다 실제 프로젝트에서 재현 가능한 업무 방식을
+            보여주는 것이 핵심입니다.
+          </SectionGuide>
 
           <section className="pf-card overflow-hidden">
             <div className="flex flex-col justify-between gap-4 border-b border-[#e7ecf2] px-6 py-5 sm:flex-row sm:items-center sm:px-7">

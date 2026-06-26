@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  PenLine,
   Search,
   Settings2,
   Sparkles,
@@ -40,6 +41,7 @@ import { InstallAppButton } from "./install-app-button";
 const navigation: ProofolioNavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "My Profile", href: "/profile", icon: Settings2 },
+  { label: "My Inputs", href: "/inputs", icon: PenLine },
   { label: "Upload", href: "/upload", icon: UploadCloud },
   { label: "Analysis", href: "/analysis", icon: FolderSearch2 },
   { label: "Personal Brand", href: "/personal-brand", icon: Fingerprint },
@@ -59,6 +61,7 @@ const navigation: ProofolioNavItem[] = [
 const pageMeta: Record<string, { eyebrow: string; title: string }> = {
   "/dashboard": { eyebrow: "CAREER WORKSPACE", title: "Dashboard" },
   "/profile": { eyebrow: "PROFILE SETTINGS", title: "My Profile" },
+  "/inputs": { eyebrow: "CAREER SOURCE", title: "My Inputs" },
   "/upload": { eyebrow: "SOURCE LIBRARY", title: "Upload" },
   "/analysis": { eyebrow: "AI INSIGHT", title: "Analysis" },
   "/personal-brand": {

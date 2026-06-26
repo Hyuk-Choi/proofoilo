@@ -16,6 +16,7 @@ import {
   ExampleHint,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { generateSkillAnalysis } from "@/lib/ai";
@@ -129,6 +130,12 @@ export function SkillAnalysisView() {
 
       {report ? (
         <>
+          <SectionGuide title="스킬 분석 읽는 방법">
+            점수는 절대 평가가 아니라 현재 업로드된 프로젝트 안에서 얼마나
+            반복적으로 증명되는지를 보여줍니다. 높은 점수는 포트폴리오 전면에,
+            낮은 점수는 보완 질문이나 다음 프로젝트 계획에 반영하세요.
+          </SectionGuide>
+
           <section className="pf-card overflow-hidden">
             <div className="grid bg-[#10213d] text-white lg:grid-cols-[280px_minmax(0,1fr)]">
               <div className="grid place-items-center border-b border-white/10 p-8 lg:border-b-0 lg:border-r">
@@ -201,6 +208,9 @@ export function SkillAnalysisView() {
                 <p className="mt-1.5 min-h-10 text-[11px] leading-5 text-[#8e9aab]">
                   {category.description}
                 </p>
+                <p className="mt-3 rounded-xl bg-[#f8fbff] px-3 py-2 text-[11px] font-semibold leading-5 text-[#66758c]">
+                  이 점수는 관련 프로젝트 근거가 얼마나 자주, 명확하게 나타나는지 기준으로 계산됩니다.
+                </p>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#e8edf3]">
                   <span
                     className="block h-full rounded-full bg-[#2563eb]"
@@ -233,6 +243,10 @@ export function SkillAnalysisView() {
                         </div>
                         <p className="mt-1.5 text-[11px] text-[#8e9aab]">
                           {skill.projectCount}개 프로젝트에서 확인
+                        </p>
+                        <p className="mt-2 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                          이 역량은 이력서 키워드, 포트폴리오 섹션 제목, 면접
+                          강점 답변에 활용할 수 있습니다.
                         </p>
                       </div>
                     </div>
@@ -268,6 +282,9 @@ export function SkillAnalysisView() {
                           </p>
                         ))}
                       </div>
+                      <p className="mt-3 rounded-xl bg-[#f8fbff] px-3 py-2 text-[11px] font-semibold leading-5 text-[#66758c]">
+                        근거 문장은 최종 포트폴리오에서 주장 아래에 배치하면 설득력이 높아집니다.
+                      </p>
                     </div>
                     <label className="rounded-2xl border border-[#eadfc5] bg-[#fffbf2] p-4">
                       <span className="flex items-center gap-2 text-[10px] font-black tracking-[0.12em] text-[#a96a0d]">
@@ -293,6 +310,10 @@ export function SkillAnalysisView() {
                         rows={5}
                         className="mt-2 w-full resize-y border-0 bg-transparent text-[12px] leading-6 text-[#806b4e] outline-none"
                       />
+                      <p className="mt-2 text-[11px] font-semibold leading-5 text-[#8d6a31]">
+                        성장 포인트는 단점이 아니라 다음 프로젝트에서 보완할
+                        검증 과제입니다.
+                      </p>
                     </label>
                   </div>
                 </article>

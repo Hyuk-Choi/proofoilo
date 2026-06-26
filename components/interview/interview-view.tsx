@@ -16,6 +16,7 @@ import {
   ArtifactResultActions,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
@@ -197,6 +198,13 @@ export function InterviewView({
             </div>
           </section>
 
+          <SectionGuide title="면접 답변 구성 기준">
+            대표 질문은 경험의 핵심을 확인하고, 꼬리질문은 판단 근거와 한계를
+            검증합니다. 답변 가이드는 <strong>상황, 판단, 행동, 결과</strong>
+            순서로 준비하고, 약점 방어는 부족한 수치나 검증 한계를 인정한 뒤
+            후속 개선 계획까지 말하는 방식이 좋습니다.
+          </SectionGuide>
+
           {questions ? (
             <section className="space-y-4">
               {questions.map((question, questionIndex) => (
@@ -212,6 +220,9 @@ export function InterviewView({
                       <div>
                         <p className="text-[10px] font-black tracking-[0.14em] text-[#8eb5ff]">
                           REPRESENTATIVE QUESTION
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold leading-5 text-white/60">
+                          면접관이 프로젝트의 본질과 본인 기여도를 확인하는 첫 질문입니다.
                         </p>
                         <textarea
                           ref={
@@ -243,6 +254,9 @@ export function InterviewView({
                           꼬리질문 3개
                         </h4>
                       </div>
+                      <p className="mt-2 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                        대표 답변의 근거, 대안, 한계를 추가로 확인하는 질문입니다.
+                      </p>
                       <div className="mt-4 space-y-3">
                         {question.followUpQuestions.map(
                           (followUp, followUpIndex) => (
@@ -288,6 +302,9 @@ export function InterviewView({
                             답변 가이드
                           </h4>
                         </div>
+                        <p className="mt-2 text-[11px] font-semibold leading-5 text-[#617b9b]">
+                          답변 순서와 반드시 포함해야 할 근거를 정리합니다.
+                        </p>
                         <textarea
                           value={question.answerGuide}
                           onChange={(event) =>
@@ -309,6 +326,9 @@ export function InterviewView({
                             약점 방어 답변
                           </h4>
                         </div>
+                        <p className="mt-2 text-[11px] font-semibold leading-5 text-[#806b4e]">
+                          부족한 성과 수치나 검증 한계를 인정하고 다음 개선 계획으로 연결합니다.
+                        </p>
                         <textarea
                           value={question.weaknessDefense}
                           onChange={(event) =>

@@ -1,14 +1,15 @@
-const CACHE_NAME = "fiveish-v11";
+const CACHE_NAME = "fiveish-v14";
+const HOME_URL = new URL("./", self.registration.scope).href;
 const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-512.png",
-];
+  "./",
+  "index.html",
+  "styles.css",
+  "app.js",
+  "manifest.webmanifest",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+  "icons/maskable-512.png",
+].map((path) => new URL(path, self.registration.scope).href);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -45,7 +46,7 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() =>
-        caches.match(event.request).then((cached) => cached || caches.match("/")),
+        caches.match(event.request).then((cached) => cached || caches.match(HOME_URL)),
       ),
   );
 });

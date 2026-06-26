@@ -20,7 +20,10 @@ import {
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { ExampleHint } from "@/components/artifacts/artifact-workspace";
+import {
+  ExampleHint,
+  SectionGuide,
+} from "@/components/artifacts/artifact-workspace";
 import { ProofolioButton } from "@/components/ui/proofolio-button";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { createDashboardData } from "@/lib/dashboard/create-dashboard-data";
@@ -39,6 +42,40 @@ const statusTone: Record<ProjectStatus, string> = {
   "분석 완료": "bg-[#e8f7f1] text-[#168765]",
   "검토 필요": "bg-[#fff4df] text-[#b66b08]",
   "포트폴리오 생성": "bg-[#eaf1ff] text-[#2563eb]",
+};
+
+const metricDescriptions: Record<string, string> = {
+  "전체 업로드 파일":
+    "분석 가능한 원천 자료의 규모입니다. 다양한 자료가 있을수록 포트폴리오 근거가 풍부해집니다.",
+  "전체 업로드 파일 수":
+    "분석 가능한 원천 자료의 규모입니다. 다양한 자료가 있을수록 포트폴리오 근거가 풍부해집니다.",
+  "분석 완료 프로젝트":
+    "AI 분석 리포트가 생성된 프로젝트입니다. 이후 포트폴리오, 자소서, 면접 질문의 기준이 됩니다.",
+  "분석 완료 프로젝트 수":
+    "AI 분석 리포트가 생성된 프로젝트입니다. 이후 포트폴리오, 자소서, 면접 질문의 기준이 됩니다.",
+  "포트폴리오 완성도":
+    "분석, 생성, 피드백, Export 단계까지 얼마나 연결되었는지 보여주는 진행률입니다.",
+  "평균 피드백 점수":
+    "전문가 피드백 기준의 평균 설득력입니다. 낮은 항목은 우선 보완 후보입니다.",
+};
+
+const workflowDescriptions: Record<string, string> = {
+  "자료 분석":
+    "업로드 파일이 문제 정의, 인사이트, 역할과 역량으로 재구성된 상태입니다.",
+  "보완 질문":
+    "분석에서 비어 있는 성과, 수치, 역할 범위를 사용자가 보완한 정도입니다.",
+  "콘텐츠 생성":
+    "포트폴리오, 자기소개서, 이력서, 피드백, 면접 자료로 변환된 정도입니다.",
+  "최종 검토":
+    "전문가 피드백을 통해 제출 전 리스크를 확인한 프로젝트 수입니다.",
+  "분석 완료":
+    "업로드 파일이 문제 정의, 인사이트, 역할과 역량으로 재구성된 상태입니다.",
+  "포트폴리오 생성":
+    "분석 리포트를 채용 담당자가 읽을 수 있는 프로젝트 스토리로 바꾼 상태입니다.",
+  "피드백 완료":
+    "직무 적합성, 근거 강도, 역할 선명도 등 전문가 평가가 끝난 상태입니다.",
+  "Export 준비":
+    "최종 포트폴리오 PPTX나 텍스트로 내보낼 수 있는 결과물이 준비된 상태입니다.",
 };
 
 export function DashboardView() {
@@ -124,11 +161,21 @@ export function DashboardView() {
               <strong className="mt-1 block text-[29px] font-black tracking-[-0.04em] text-[#142541]">
                 {metric.value}
               </strong>
-              <p className="mt-1 text-[11px] font-medium text-[#9aa6b6]">{metric.detail}</p>
+              <p className="mt-1 text-[12px] font-semibold text-[#7d8da2]">{metric.detail}</p>
+              <p className="mt-3 rounded-xl bg-[#f8fbff] px-3 py-2.5 text-[11px] font-semibold leading-5 text-[#61728a]">
+                {metricDescriptions[metric.label] ??
+                  "현재 워크스페이스 진행 상태를 빠르게 판단하는 지표입니다."}
+              </p>
             </article>
           );
         })}
       </section>
+
+      <SectionGuide title="대시보드 읽는 방법">
+        숫자는 단순 활동량이 아니라 포트폴리오 근거의 준비도를 의미합니다.
+        업로드 수가 늘어나면 분석 근거가 넓어지고, 피드백 점수는 최종 제출 전
+        보완 우선순위를 정하는 기준이 됩니다.
+      </SectionGuide>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
         <article className="pf-card overflow-hidden">
@@ -178,6 +225,9 @@ export function DashboardView() {
                   <p className="text-[11px] font-bold text-[#9aa5b4]">발견된 핵심 역량</p>
                   <p className="mt-1 text-[12px] font-extrabold text-[#52657d]">
                     {project.competency}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5 text-[#8a98aa]">
+                    이 역량은 포트폴리오 제목과 이력서 키워드 후보로 활용됩니다.
                   </p>
                 </div>
 
@@ -263,6 +313,10 @@ export function DashboardView() {
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
+                  <p className="mt-2 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                    {workflowDescriptions[item.label] ??
+                      "현재 프로젝트 결과물 생성 단계의 진행 정도입니다."}
+                  </p>
                 </div>
               );
             })}
@@ -294,7 +348,7 @@ export function DashboardView() {
       <section className="grid gap-4 lg:grid-cols-3">
         <Link
           href="/upload"
-          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white"
+          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white hover:shadow-[0_12px_30px_rgba(30,56,92,0.07)]"
         >
           <span className="grid size-10 place-items-center rounded-xl bg-white text-[#2563eb] shadow-sm">
             <Plus size={18} />
@@ -303,15 +357,15 @@ export function DashboardView() {
             <strong className="block text-[12px] font-extrabold text-[#31435d]">
               새 자료 추가
             </strong>
-            <span className="mt-1 block text-[11px] text-[#8a98aa]">
-              PDF, PPT, 문서와 이미지를 업로드하세요.
+            <span className="mt-1 block text-[12px] leading-5 text-[#66758c]">
+              PDF, PPT, 문서와 이미지를 업로드해 분석 근거를 늘립니다.
             </span>
           </span>
           <ChevronRight size={15} className="text-[#a6b1bf] group-hover:text-[#2563eb]" />
         </Link>
         <Link
           href="/portfolio"
-          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white"
+          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white hover:shadow-[0_12px_30px_rgba(30,56,92,0.07)]"
         >
           <span className="grid size-10 place-items-center rounded-xl bg-white text-[#7157d9] shadow-sm">
             <BriefcaseBusiness size={18} />
@@ -320,15 +374,15 @@ export function DashboardView() {
             <strong className="block text-[12px] font-extrabold text-[#31435d]">
               포트폴리오 이어서 작성
             </strong>
-            <span className="mt-1 block text-[11px] text-[#8a98aa]">
-              분석된 역량을 프로젝트 스토리로 정리하세요.
+            <span className="mt-1 block text-[12px] leading-5 text-[#66758c]">
+              분석된 역량을 문제, 인사이트, 실행, 결과가 있는 스토리로 정리합니다.
             </span>
           </span>
           <ChevronRight size={15} className="text-[#a6b1bf] group-hover:text-[#2563eb]" />
         </Link>
         <Link
           href="/feedback"
-          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white"
+          className="group flex items-center gap-4 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] p-4 transition hover:border-[#b8cae4] hover:bg-white hover:shadow-[0_12px_30px_rgba(30,56,92,0.07)]"
         >
           <span className="grid size-10 place-items-center rounded-xl bg-white text-[#15966f] shadow-sm">
             <FolderKanban size={18} />
@@ -337,8 +391,8 @@ export function DashboardView() {
             <strong className="block text-[12px] font-extrabold text-[#31435d]">
               전문가 피드백 확인
             </strong>
-            <span className="mt-1 block text-[11px] text-[#8a98aa]">
-              강점과 보완점을 직무 관점에서 확인하세요.
+            <span className="mt-1 block text-[12px] leading-5 text-[#66758c]">
+              제출 전 강점, 리스크, 보완 문장을 전문가 기준으로 점검합니다.
             </span>
           </span>
           <ChevronRight size={15} className="text-[#a6b1bf] group-hover:text-[#2563eb]" />

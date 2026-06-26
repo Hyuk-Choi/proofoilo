@@ -17,6 +17,7 @@ import {
   ArtifactResultActions,
   NextStepCard,
   NoAnalysisForArtifact,
+  SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
 import { useAnalysisSelection } from "@/hooks/use-analysis-selection";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
@@ -196,6 +197,13 @@ export function ResumeView({
             </div>
           </section>
 
+          <SectionGuide title="이력서 문장 점검 기준">
+            좋은 불릿은 <strong>무엇을 분석했는지</strong>,
+            <strong>어떤 판단을 내렸는지</strong>, <strong>어떤 산출물 또는
+            효과로 이어졌는지</strong>가 한 문장 안에서 보입니다. 수치가 없을
+            때는 기대효과와 검증 과제를 분리해 쓰는 것이 안전합니다.
+          </SectionGuide>
+
           <section className="pf-card overflow-hidden">
             <div className="flex flex-col justify-between gap-4 border-b border-[#e7ecf2] px-6 py-5 sm:flex-row sm:items-center sm:px-7">
               <div>
@@ -242,6 +250,10 @@ export function ResumeView({
                           <span className="grid size-8 place-items-center rounded-lg bg-[#eaf1ff] text-[11px] font-black text-[#2563eb]">
                             {String(index + 1).padStart(2, "0")}
                           </span>
+                          <div className="rounded-xl bg-[#f8fbff] px-3 py-2 text-[11px] font-semibold leading-5 text-[#61728a] sm:col-start-2">
+                            이 문장은 이력서에서 바로 읽히는 성과 문장입니다. 행동
+                            동사, 분석 대상, 결과 또는 영향이 드러나는지 확인하세요.
+                          </div>
                           <textarea
                             ref={index === 0 ? firstBulletRef : undefined}
                             value={bullet}
@@ -254,7 +266,7 @@ export function ResumeView({
                             }
                             aria-label={`이력서 문장 ${index + 1}`}
                             rows={3}
-                            className="w-full resize-y border-0 bg-transparent text-[13px] font-semibold leading-[1.85] text-[#43566f] outline-none"
+                            className="w-full resize-y border-0 bg-transparent text-[13px] font-semibold leading-[1.85] text-[#43566f] outline-none sm:col-start-2"
                           />
                         </div>
                       ),

@@ -4,6 +4,10 @@ import type {
   SkillInsight,
   SkillLevel,
 } from "../../types/proofolio";
+import {
+  buildEvidenceBoundaryNote,
+  buildExpertStandardNote,
+} from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   clampScore,
@@ -123,6 +127,9 @@ export function buildSkillAnalysisReport(
   analyses: ProjectAnalysis[],
 ): SkillAnalysisReport {
   const skills = buildSkillInsights(analyses);
+  const evidenceBoundary = buildEvidenceBoundaryNote(
+    analyses.map((analysis) => analysis.result).join(" "),
+  );
   const overallScore = skills.length
     ? Math.round(
         skills.slice(0, 6).reduce((total, skill) => total + skill.score, 0) /
@@ -150,7 +157,7 @@ export function buildSkillAnalysisReport(
     (skill) =>
       `${skill.name}: ${skill.projectCount}개 프로젝트 근거를 기준으로 ${skill.level} 단계로 평가했습니다. ${
         skill.projectCount >= 2
-          ? "반복 적용 사례가 확인됩니다."
+          ? "반복 적용 사례가 확인되므로 대표 프로젝트 2개를 묶어 재현 가능한 업무 방식으로 제시하세요."
           : "추가 프로젝트 또는 정량 성과가 확보되면 재현 가능성을 더 강하게 입증할 수 있습니다."
       }`,
   );
@@ -175,7 +182,7 @@ export function buildSkillAnalysisReport(
       `상위 역량은 ${skills
         .slice(0, 3)
         .map((skill) => skill.name)
-        .join(", ")}입니다. 점수는 프로젝트 반복성, 역할의 구체성, 프로젝트 유형의 다양성, 정량 근거 여부를 반영했으며 단일 사례는 핵심 경쟁력으로 과대평가하지 않았습니다.`,
+        .join(", ")}입니다. 점수는 프로젝트 반복성, 역할의 구체성, 프로젝트 유형의 다양성, 정량 근거 여부를 반영했으며 단일 사례는 핵심 경쟁력으로 과대평가하지 않았습니다. ${buildExpertStandardNote()} ${evidenceBoundary}`,
     skills,
     categories,
     topStrengths,

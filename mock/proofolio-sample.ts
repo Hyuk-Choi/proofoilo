@@ -31,6 +31,7 @@ export const sampleProofolioWorkspace: ProofolioWorkspace = {
   feedbackScores: {},
   interviewQuestions: {},
   questionAnswers: {},
+  careerInputs: [],
   personalBrand: undefined,
   skillAnalysis: undefined,
   updatedAt: profileUpdatedAt,

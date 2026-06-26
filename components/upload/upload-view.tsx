@@ -119,13 +119,18 @@ async function readFileEvidence(file: File) {
 
   try {
     const text = await file.text();
-    const normalized = text.replace(/\s+/g, " ").trim();
-    const preview = normalized.slice(0, 2400);
+    const normalized = text
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join("\n");
+    const preview = normalized.slice(0, 4200);
 
     return {
       contentPreview: preview,
       contentSummary: preview
-        ? `텍스트 ${normalized.length.toLocaleString("ko-KR")}자 중 앞부분 ${preview.length.toLocaleString("ko-KR")}자를 분석 미리보기로 반영했습니다.`
+        ? `텍스트 ${normalized.length.toLocaleString("ko-KR")}자 중 앞부분 ${preview.length.toLocaleString("ko-KR")}자를 줄 단위 분석 미리보기로 반영했습니다.`
         : "파일을 읽었지만 분석 가능한 텍스트가 확인되지 않았습니다.",
     };
   } catch {
@@ -178,7 +183,13 @@ export function UploadView() {
       ? "계정 저장 활성화"
       : account.status === "checking"
         ? "저장 상태 확인 중"
-        : "이 브라우저에 저장";
+      : "이 브라우저에 저장";
+  const statusDescriptions: Record<UploadedFileStatus, string> = {
+    "대기 중": "아직 분석 전입니다. AI 분석 시작을 누르면 리포트가 생성됩니다.",
+    "분석 중": "프로젝트 맥락, 파일 정보와 텍스트 미리보기를 검토하는 중입니다.",
+    "분석 완료": "Analysis 페이지에서 문제 정의, 전략, 역할과 보완 질문을 확인할 수 있습니다.",
+    "보완 필요": "파일을 다시 분석하거나 부족한 정보를 My Inputs/보완 질문으로 추가해 주세요.",
+  };
 
   const addFiles = async (incomingFiles: File[]) => {
     const { validFiles, errors: validationErrors } = validateFiles(
@@ -481,12 +492,17 @@ export function UploadView() {
             {SUPPORTED_FILE_GROUPS.map((group) => (
               <div
                 key={group.label}
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.055] px-3.5 py-3"
+                className="rounded-xl border border-white/10 bg-white/[0.055] px-3.5 py-3"
               >
-                <span className="text-[12px] font-extrabold">{group.label}</span>
-                <span className="text-[11px] font-medium text-white/50">
-                  {group.extensions}
-                </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[12px] font-extrabold">{group.label}</span>
+                  <span className="text-[11px] font-medium text-white/55">
+                    {group.extensions}
+                  </span>
+                </div>
+                <p className="mt-2 text-[11px] font-medium leading-5 text-white/65">
+                  {group.description}
+                </p>
               </div>
             ))}
           </div>
@@ -617,6 +633,9 @@ export function UploadView() {
                       <p className="mt-1.5 text-[11px] text-[#95a1b1]">
                         {formatFileSize(file.size)}
                       </p>
+                      <p className="mt-1 text-[10px] font-semibold leading-4 text-[#8a98aa]">
+                        형식과 용량은 분석 신뢰도와 원문 추출 범위를 판단하는 기준입니다.
+                      </p>
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-[#9aa5b4]">
@@ -626,18 +645,23 @@ export function UploadView() {
                         {formatUploadDate(file.uploadedAt)}
                       </p>
                     </div>
-                    <span
-                      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-extrabold ${status.className}`}
-                    >
-                      {file.status === "분석 중" && isAnalyzing ? (
-                        <LoaderCircle size={10} className="animate-spin" />
-                      ) : (
-                        <span
-                          className={`size-1.5 rounded-full ${status.dotClassName}`}
-                        />
-                      )}
-                      {status.label}
-                    </span>
+                    <div>
+                      <span
+                        className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-extrabold ${status.className}`}
+                      >
+                        {file.status === "분석 중" && isAnalyzing ? (
+                          <LoaderCircle size={10} className="animate-spin" />
+                        ) : (
+                          <span
+                            className={`size-1.5 rounded-full ${status.dotClassName}`}
+                          />
+                        )}
+                        {status.label}
+                      </span>
+                      <p className="mt-1.5 text-[11px] font-semibold leading-5 text-[#7d8da2]">
+                        {statusDescriptions[file.status]}
+                      </p>
+                    </div>
                     {file.status !== "분석 중" || !isAnalyzing ? (
                       <button
                         type="button"

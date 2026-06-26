@@ -4,6 +4,12 @@ import type {
   PortfolioOutput,
   ProjectAnalysis,
 } from "../../types/proofolio";
+import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
+import {
+  buildConsultantLens,
+  buildConsultantRevisionPrinciple,
+  buildExpertStandardNote,
+} from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
   buildConsultingComment,
@@ -26,6 +32,13 @@ export function buildFeedbackScore(
   const answeredEvidence = Object.values(userAnswers).filter(
     (answer) => answer.trim().length > 0,
   );
+  const detailedReview = getDetailedReviewForAnalysis(analysis);
+  const highConfidenceItems = detailedReview.itemReviews.filter(
+    (item) => item.confidence === "높음",
+  ).length;
+  const mediumConfidenceItems = detailedReview.itemReviews.filter(
+    (item) => item.confidence === "중간",
+  ).length;
   const evidenceText = [
     analysis.result,
     analysis.userRole,
@@ -70,6 +83,16 @@ export function buildFeedbackScore(
     ...scores,
     totalScore,
     comments: [
+      buildConsultingComment(
+        buildExpertStandardNote(),
+        "모든 평가는 지원자의 장점을 과장하는 방식이 아니라 채용 담당자가 검증할 수 있는 근거와 리스크를 함께 보는 방식으로 수행됩니다.",
+        buildConsultantLens(analysis, answeredEvidence.join(" ")),
+      ),
+      buildConsultingComment(
+        `항목별 정밀 검토 ${detailedReview.itemReviews.length}개 중 근거 신뢰도 높음 ${highConfidenceItems}개, 중간 ${mediumConfidenceItems}개를 확인했습니다.`,
+        "근거 수준이 섞여 있으므로 모든 문장을 동일한 확신도로 쓰면 문서 신뢰도가 낮아질 수 있습니다.",
+        "확정 성과, 합리적 해석, 추가 검증 과제를 라벨로 구분하고 근거 신뢰도가 낮은 항목은 보완 질문 답변으로 강화하세요.",
+      ),
       buildConsultingComment(
         `${analysis.competencyTags.slice(0, 2).join(", ")} 역량은 확인되지만 지원 직무의 핵심 KPI와 직접 연결된 문장이 부족합니다.`,
         "경험의 관련성은 보이지만 입사 후 어떤 업무 성과로 전환될지 채용 담당자가 추가로 해석해야 합니다.",
@@ -133,9 +156,14 @@ export function buildFeedbackScore(
           ),
     ],
     revisionSuggestions: [
+      buildConsultantRevisionPrinciple(analysis),
       `기존: 시장과 고객을 분석해 전략을 제안했습니다.\n컨설턴트 수정안: ${roleSummary}. 이 과정에서 적용한 비교 기준과 최종 의사결정 항목을 함께 명시하세요.`,
       `기존: 프로젝트를 통해 의미 있는 결과를 만들었습니다.\n컨설턴트 수정안: ${resultSummary}. 단, 실행 전 제안 결과인지 실행 후 확인된 성과인지 구분하고 기준 시점·비교 대상·수치를 추가하세요.`,
       `논리 연결 수정안: "${insightSummary}"를 근거로 "${strategySummary}"를 선택했습니다. 대안 대비 우위와 검증할 KPI를 이어서 제시하세요.`,
+      `근거 보강 수정안: ${detailedReview.missingEvidence
+        .map((gap) => `${gap.area}은 ${gap.requiredEvidence}`)
+        .slice(0, 2)
+        .join(" / ")}`,
     ],
   };
 }

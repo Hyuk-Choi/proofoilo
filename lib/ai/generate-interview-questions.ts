@@ -2,6 +2,11 @@ import type {
   InterviewQuestion,
   ProjectAnalysis,
 } from "../../types/proofolio";
+import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
+import {
+  buildConsultantLens,
+  buildEvidenceBoundaryNote,
+} from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import { firstSentence } from "./shared";
 
@@ -15,6 +20,16 @@ export function buildInterviewQuestions(
   const improvementSummary = firstSentence(
     analysis.improvementPoints[0] ?? "근거가 부족했던 지점",
   );
+  const detailedReview = getDetailedReviewForAnalysis(analysis);
+  const strongestEvidence =
+    detailedReview.itemReviews.find((item) => item.confidence === "높음") ??
+    detailedReview.itemReviews[0];
+  const weakestEvidence =
+    [...detailedReview.itemReviews]
+      .reverse()
+      .find((item) => item.confidence === "낮음") ??
+    detailedReview.itemReviews.at(-1);
+  const evidenceBoundary = buildEvidenceBoundaryNote(analysis.result);
 
   return [
     {
@@ -64,6 +79,18 @@ export function buildInterviewQuestions(
         `${analysis.competencyTags.slice(0, 3).join(", ")} 중 근거가 가장 강한 두 역량을 지원 기업의 실제 과제와 연결하세요. 경험 자체의 유사성보다 문제 정의, 기준 수립, 실행안 설계, 검증 방식의 재현 가능성을 설명하는 것이 중요합니다.`,
       weaknessDefense:
         "산업 경험이 직접 일치하지 않는 경우 카테고리 지식보다 문제 정의, 데이터 해석, 이해관계자 커뮤니케이션처럼 이전 가능한 역량을 중심으로 답하세요.",
+    },
+    {
+      question: "첨부 자료와 분석 리포트에서 가장 강한 근거와 가장 약한 근거는 무엇이라고 판단하나요?",
+      followUpQuestions: [
+        "가장 강한 근거가 지원 직무 역량을 어떻게 입증하나요?",
+        "약한 근거를 면접에서 질문받으면 어떤 한계와 후속 검증 계획을 말하겠나요?",
+        "확인된 사실과 본인의 해석을 어떻게 구분해 설명하겠나요?",
+      ],
+      answerGuide:
+        `${buildConsultantLens(analysis)} 강한 근거는 ${strongestEvidence?.sourceLabel ?? "핵심 분석 항목"}의 ${strongestEvidence?.analysisFocus ?? "근거 항목"}로 설명하고, 약한 근거는 ${weakestEvidence?.sourceLabel ?? "보완 필요 항목"}의 한계를 인정한 뒤 보완 자료와 검증 계획을 제시하세요. ${evidenceBoundary}`,
+      weaknessDefense:
+        "모든 근거를 완벽하다고 말하면 오히려 신뢰도가 낮아집니다. 확인한 범위, 해석한 부분, 아직 검증하지 못한 부분을 분리하고 추가로 확보할 데이터나 피드백을 제시하세요.",
     },
   ];
 }
