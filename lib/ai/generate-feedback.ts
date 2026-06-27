@@ -3,6 +3,7 @@ import type {
   FeedbackScore,
   PortfolioOutput,
   ProjectAnalysis,
+  ProofolioWorkspace,
 } from "../../types/proofolio";
 import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
 import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
@@ -24,6 +25,7 @@ export function buildFeedbackScore(
   portfolio?: PortfolioOutput,
   coverLetter?: CoverLetterOutput,
   userAnswers: Record<string, string> = {},
+  workspace?: ProofolioWorkspace,
 ): FeedbackScore {
   const problemSummary = sentenceFragment(analysis.problemDefinition);
   const roleSummary = sentenceFragment(analysis.userRole);
@@ -36,7 +38,7 @@ export function buildFeedbackScore(
   const detailedReview = getDetailedReviewForAnalysis(analysis);
   const researchAudit = getProjectResearchDepthAudit(
     analysis,
-    undefined,
+    workspace,
     userAnswers,
   );
   const highConfidenceItems = detailedReview.itemReviews.filter(
@@ -96,20 +98,6 @@ export function buildFeedbackScore(
         buildConsultantLens(analysis, answeredEvidence.join(" ")),
       ),
       buildConsultingComment(
-        `리서치 충분도는 ${researchAudit.score}/100(${researchAudit.level})입니다. ${researchAudit.summary}`,
-        researchAudit.readyForOutput
-          ? "현재 산출물은 원문/보완 근거와 연결해 활용할 수 있지만 제출 전 수치의 출처와 비교 기준 확인은 필요합니다."
-          : "리서치가 부족한 상태에서 문장만 다듬으면 최종본이 그럴듯한 주장처럼 보일 위험이 있습니다.",
-        researchAudit.readyForOutput
-          ? "리서치 브리프를 포트폴리오 근거 박스로 남기고, 면접에서는 검증된 주장과 기대효과를 구분해 설명하세요."
-          : `우선 보완 액션: ${researchAudit.minimumActions.slice(0, 3).join(" / ") || "원문, 수치, 출처, 보완 답변을 추가하세요."}`,
-      ),
-      buildConsultingComment(
-        `항목별 정밀 검토 ${detailedReview.itemReviews.length}개 중 근거 신뢰도 높음 ${highConfidenceItems}개, 중간 ${mediumConfidenceItems}개를 확인했습니다.`,
-        "근거 수준이 섞여 있으므로 모든 문장을 동일한 확신도로 쓰면 문서 신뢰도가 낮아질 수 있습니다.",
-        "확정 성과, 합리적 해석, 추가 검증 과제를 라벨로 구분하고 근거 신뢰도가 낮은 항목은 보완 질문 답변으로 강화하세요.",
-      ),
-      buildConsultingComment(
         `${analysis.competencyTags.slice(0, 2).join(", ")} 역량은 확인되지만 지원 직무의 핵심 KPI와 직접 연결된 문장이 부족합니다.`,
         "경험의 관련성은 보이지만 입사 후 어떤 업무 성과로 전환될지 채용 담당자가 추가로 해석해야 합니다.",
         `지원 직무의 대표 과업 하나를 지정하고, "${analysis.competencyTags[0]}" 역량이 해당 과업의 품질·속도·성과를 어떻게 개선하는지 한 문장으로 연결하세요.`,
@@ -126,23 +114,25 @@ export function buildFeedbackScore(
         "역할이 불명확하면 좋은 전략도 팀 전체 성과로 인식되어 개인 역량의 증거력이 낮아집니다.",
         `"${roleSummary}" 뒤에 본인이 직접 결정한 기준, 단독 작성한 산출물, 합의를 이끈 범위를 각각 명시하세요.`,
       ),
-      answeredEvidence.length
-        ? buildConsultingComment(
-            `보완 답변 ${answeredEvidence.length}개를 검토했습니다. ${
+      buildConsultingComment(
+        `리서치 충분도는 ${researchAudit.score}/100(${researchAudit.level})입니다. 항목별 정밀 검토 ${detailedReview.itemReviews.length}개 중 근거 신뢰도 높음 ${highConfidenceItems}개, 중간 ${mediumConfidenceItems}개를 확인했습니다. ${
+          answeredEvidence.length
+            ? `보완 답변 ${answeredEvidence.length}개도 함께 검토했습니다.`
+            : "보완 답변은 아직 충분히 확인되지 않았습니다."
+        } ${
               outcomeEvidence
                 ? "일부 성과 수치의 비교 기준과 출처가 분리되어 있습니다."
                 : metricEvidence
                   ? "조사 범위 수치는 확인되지만 실행 결과를 입증할 성과 지표가 없습니다."
                 : "정량 지표가 없어 근거의 강도를 객관적으로 판단하기 어렵습니다."
             }`,
-            "주장과 증거가 떨어져 있으면 실제 성과보다 서술의 완성도로 평가될 위험이 있습니다.",
-            "각 결과 문장 바로 뒤에 기준 시점, 비교 대상, 수치, 출처를 붙이고 제안 단계의 기대효과와 실행 후 확인된 성과를 구분하세요.",
-          )
-        : buildConsultingComment(
-            "현재 결과가 정성적 기대효과 중심이며 조사 범위와 성과 기준이 확인되지 않습니다.",
-            "검증되지 않은 결과를 성과로 표현하면 문서 전체의 신뢰도가 낮아집니다.",
-            `"${analysis.missingQuestions[0] ?? "분석 범위와 성과 지표는 무엇인가요?"}"에 답한 뒤 수치, 비교 기준, 출처를 결과 섹션에 반영하세요.`,
-          ),
+        researchAudit.readyForOutput
+          ? "현재 산출물은 원문/보완 근거와 연결해 활용할 수 있지만, 주장과 증거가 떨어져 있으면 실제 성과보다 서술의 완성도로 평가될 위험이 있습니다."
+          : "리서치가 부족한 상태에서 문장만 다듬으면 최종본이 그럴듯한 주장처럼 보일 위험이 있습니다.",
+        researchAudit.readyForOutput
+          ? "각 결과 문장 바로 뒤에 기준 시점, 비교 대상, 수치, 출처를 붙이고 제안 단계의 기대효과와 실행 후 확인된 성과를 구분하세요."
+          : `우선 보완 액션: ${researchAudit.minimumActions.slice(0, 3).join(" / ") || "원문, 수치, 출처, 보완 답변을 추가하세요."}`,
+      ),
       buildConsultingComment(
         `"${insightSummary}"는 전략 방향과 연결되지만 기존 접근과의 차이가 명시되지 않았습니다.`,
         "대안 비교가 없으면 인사이트가 일반적인 마케팅 원칙으로 읽힐 수 있습니다.",
@@ -190,11 +180,18 @@ export async function generateFeedback(
   portfolio?: PortfolioOutput,
   coverLetter?: CoverLetterOutput,
   userAnswers: Record<string, string> = {},
+  workspace?: ProofolioWorkspace,
 ): Promise<FeedbackScore> {
   return runOpenAiMock({
     task: "expert-feedback-generation",
     inputSummary: `${analysis.projectTitle} ${portfolio?.portfolioTitle ?? ""}`,
     resolver: () =>
-      buildFeedbackScore(analysis, portfolio, coverLetter, userAnswers),
+      buildFeedbackScore(
+        analysis,
+        portfolio,
+        coverLetter,
+        userAnswers,
+        workspace,
+      ),
   });
 }

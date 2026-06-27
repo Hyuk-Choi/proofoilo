@@ -1,7 +1,9 @@
 import type {
   ProjectAnalysis,
+  ProofolioWorkspace,
   ResumeBullet,
 } from "../../types/proofolio";
+import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
 import { buildEvidenceBoundaryNote } from "./consultant-standards";
 import { runOpenAiMock } from "./openai-mock-provider";
 import {
@@ -70,10 +72,15 @@ function createResumeBulletCopy(analysis: ProjectAnalysis) {
 
 export function buildResumeBullets(
   analysis: ProjectAnalysis,
+  workspace?: ProofolioWorkspace,
 ): ResumeBullet[] {
+  const researchAudit = getProjectResearchDepthAudit(analysis, workspace);
   const evidenceBoundary = buildEvidenceBoundaryNote(
     `${analysis.result} ${analysis.userRole}`,
   );
+  const researchBoundary = researchAudit.readyForOutput
+    ? `리서치 충분도 ${researchAudit.score}/100 기준으로 원문·보완 근거와 연결 가능한 주장 중심으로 정리`
+    : `리서치 충분도 ${researchAudit.score}/100 기준으로 확정 성과와 기대효과를 분리하고 보완 필요 근거 명시`;
 
   return [
     {
@@ -83,11 +90,13 @@ export function buildResumeBullets(
         compactSentence(
           `성과 해석 단계에서 확정 성과와 기대효과를 구분하고, ${evidenceBoundary}`,
         ),
+        compactSentence(researchBoundary),
       ],
       keywords: [
         ...analysis.competencyTags,
         "문제 정의",
         "근거 검증",
+        "리서치 충분도",
         "실행안 도출",
       ],
     },
@@ -96,10 +105,11 @@ export function buildResumeBullets(
 
 export async function generateResumeBullets(
   analysis: ProjectAnalysis,
+  workspace?: ProofolioWorkspace,
 ): Promise<ResumeBullet[]> {
   return runOpenAiMock({
     task: "resume-bullet-generation",
     inputSummary: `${analysis.projectTitle} ${analysis.projectType}`,
-    resolver: () => buildResumeBullets(analysis),
+    resolver: () => buildResumeBullets(analysis, workspace),
   });
 }

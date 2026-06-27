@@ -66,7 +66,10 @@ export function ResumeView({
     setIsGenerating(true);
 
     try {
-      const generated = await generateResumeBullets(selectedAnalysis);
+      const generated = await generateResumeBullets(
+        selectedAnalysis,
+        workspace,
+      );
 
       setWorkspace((current) => ({
         ...current,

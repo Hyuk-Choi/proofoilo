@@ -1,8 +1,10 @@
 import type {
   InterviewQuestion,
   ProjectAnalysis,
+  ProofolioWorkspace,
 } from "../../types/proofolio";
 import { getDetailedReviewForAnalysis } from "../analysis/detailed-review";
+import { getProjectResearchDepthAudit } from "../analysis/research-depth-audit";
 import {
   buildConsultantLens,
   buildEvidenceBoundaryNote,
@@ -12,6 +14,7 @@ import { firstSentence } from "./shared";
 
 export function buildInterviewQuestions(
   analysis: ProjectAnalysis,
+  workspace?: ProofolioWorkspace,
 ): InterviewQuestion[] {
   const primarySkill = analysis.competencyTags[0] ?? "문제 해결";
   const secondarySkill = analysis.competencyTags[1] ?? "기획력";
@@ -21,6 +24,7 @@ export function buildInterviewQuestions(
     analysis.improvementPoints[0] ?? "근거가 부족했던 지점",
   );
   const detailedReview = getDetailedReviewForAnalysis(analysis);
+  const researchAudit = getProjectResearchDepthAudit(analysis, workspace);
   const strongestEvidence =
     detailedReview.itemReviews.find((item) => item.confidence === "높음") ??
     detailedReview.itemReviews[0];
@@ -30,6 +34,9 @@ export function buildInterviewQuestions(
       .find((item) => item.confidence === "낮음") ??
     detailedReview.itemReviews.at(-1);
   const evidenceBoundary = buildEvidenceBoundaryNote(analysis.result);
+  const researchDefense = researchAudit.readyForOutput
+    ? `리서치 충분도 ${researchAudit.score}/100(${researchAudit.level})로 산출물 반영이 가능하지만, 출처·기간·비교 기준은 마지막에 확인하세요.`
+    : `리서치 충분도 ${researchAudit.score}/100(${researchAudit.level})로 일부 주장은 초안입니다. 보완 액션은 ${researchAudit.minimumActions.slice(0, 3).join(" / ") || "원문, 수치, 출처 추가"}입니다.`;
 
   return [
     {
@@ -88,19 +95,20 @@ export function buildInterviewQuestions(
         "확인된 사실과 본인의 해석을 어떻게 구분해 설명하겠나요?",
       ],
       answerGuide:
-        `${buildConsultantLens(analysis)} 강한 근거는 ${strongestEvidence?.sourceLabel ?? "핵심 분석 항목"}의 ${strongestEvidence?.analysisFocus ?? "근거 항목"}로 설명하고, 약한 근거는 ${weakestEvidence?.sourceLabel ?? "보완 필요 항목"}의 한계를 인정한 뒤 보완 자료와 검증 계획을 제시하세요. ${evidenceBoundary}`,
+        `${buildConsultantLens(analysis)} 강한 근거는 ${strongestEvidence?.sourceLabel ?? "핵심 분석 항목"}의 ${strongestEvidence?.analysisFocus ?? "근거 항목"}로 설명하고, 약한 근거는 ${weakestEvidence?.sourceLabel ?? "보완 필요 항목"}의 한계를 인정한 뒤 보완 자료와 검증 계획을 제시하세요. ${evidenceBoundary} ${researchDefense}`,
       weaknessDefense:
-        "모든 근거를 완벽하다고 말하면 오히려 신뢰도가 낮아집니다. 확인한 범위, 해석한 부분, 아직 검증하지 못한 부분을 분리하고 추가로 확보할 데이터나 피드백을 제시하세요.",
+        `모든 근거를 완벽하다고 말하면 오히려 신뢰도가 낮아집니다. 확인한 범위, 해석한 부분, 아직 검증하지 못한 부분을 분리하고 추가로 확보할 데이터나 피드백을 제시하세요. ${researchDefense}`,
     },
   ];
 }
 
 export async function generateInterviewQuestions(
   analysis: ProjectAnalysis,
+  workspace?: ProofolioWorkspace,
 ): Promise<InterviewQuestion[]> {
   return runOpenAiMock({
     task: "interview-question-generation",
     inputSummary: `${analysis.projectTitle} ${analysis.projectType}`,
-    resolver: () => buildInterviewQuestions(analysis),
+    resolver: () => buildInterviewQuestions(analysis, workspace),
   });
 }

@@ -114,7 +114,7 @@ function buildFeedbackCopy(
     "",
     ...scoreItems.flatMap((item, index) => [
       `[${item.label}] ${(feedback[item.key] / 10).toFixed(1)} / 10`,
-      feedback.comments[index] ?? "",
+      feedback.comments[index + 1] ?? feedback.comments[index] ?? "",
       "",
     ]),
     "수정 제안",
@@ -182,6 +182,7 @@ export function FeedbackView({
         target === "portfolio" ? portfolio : undefined,
         target === "coverLetter" ? coverLetter : undefined,
         workspace.questionAnswers[selectedAnalysis.id],
+        workspace,
       );
 
       setWorkspace((current) => ({
@@ -395,7 +396,8 @@ export function FeedbackView({
                           />
                         </div>
                         <p className="mt-4 text-[12px] leading-[1.8] text-[#6e7f94]">
-                          {feedback.comments[index] ??
+                          {feedback.comments[index + 1] ??
+                            feedback.comments[index] ??
                             "평가 기준에 맞춘 추가 코멘트를 확인해 주세요."}
                         </p>
                         <p className="mt-3 rounded-xl bg-white px-3 py-2 text-[11px] font-semibold leading-5 text-[#7d8da2] shadow-sm">

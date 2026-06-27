@@ -71,7 +71,10 @@ export function InterviewView({
     setIsGenerating(true);
 
     try {
-      const generated = await generateInterviewQuestions(selectedAnalysis);
+      const generated = await generateInterviewQuestions(
+        selectedAnalysis,
+        workspace,
+      );
       setWorkspace((current) => ({
         ...current,
         interviewQuestions: {
