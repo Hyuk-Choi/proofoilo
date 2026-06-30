@@ -484,8 +484,8 @@ export function UploadView() {
             한 번에 분석합니다
           </h3>
           <p className="mt-3 text-[12px] leading-6 text-white/60">
-            실제 AI 연결 전 MVP에서는 OpenAI mock provider가 파일명, 형식,
-            용량과 텍스트 미리보기를 검토해 전문 컨설턴트 수준의 분석
+            MVP에서는 내부 분석 로직이 파일명, 형식, 용량과 텍스트
+            미리보기를 검토해 전문 컨설턴트 수준의 시뮬레이션 분석
             리포트를 생성합니다.
           </p>
           <div className="mt-6 space-y-2">

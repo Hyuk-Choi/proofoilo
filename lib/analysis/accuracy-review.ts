@@ -259,7 +259,7 @@ export function getAccuracyReportForAnalysis(
     verifiedClaims < claimChecks.length
       ? `주요 주장 ${claimChecks.length}개 중 ${claimChecks.length - verifiedClaims}개는 직접 근거 연결이 부족합니다.`
       : "",
-    "현재 MVP는 OpenAI mock provider 기준이므로 실제 API 연결 전에는 사용자가 제공한 원문과 답변을 기준으로 보수적으로 해석합니다.",
+    "현재 MVP는 내부 분석 로직 기준이므로 외부 생성 API 연결 전에는 사용자가 제공한 원문과 답변을 기준으로 보수적으로 해석합니다.",
   ]);
   const verificationActions = compactList([
     ...claimChecks

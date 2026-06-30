@@ -30,11 +30,16 @@ import {
   ExampleHint,
   SectionGuide,
 } from "@/components/artifacts/artifact-workspace";
+import { AnalysisResultCard } from "@/components/AnalysisResultCard";
 import { useProofolioWorkspace } from "@/hooks/use-proofolio-workspace";
 import { getAccuracyReportForAnalysis } from "@/lib/analysis/accuracy-review";
 import { getProjectEvidenceAudit } from "@/lib/analysis/evidence-audit";
 import { getDetailedReviewForAnalysis } from "@/lib/analysis/detailed-review";
 import { getProjectResearchDepthAudit } from "@/lib/analysis/research-depth-audit";
+import {
+  createAnalysisInputFromProject,
+  generateAnalysisResult,
+} from "@/lib/resultGenerator";
 import { formatUploadDate, getDisplayFileType } from "@/lib/files";
 import type { ProjectAnalysis } from "@/types/proofolio";
 
@@ -191,9 +196,17 @@ export function AnalysisView() {
   const [selectedId, setSelectedId] = useState(
     completedAnalyses[0]?.id ?? "",
   );
+  const [analysisVariant, setAnalysisVariant] = useState(0);
   const selectedAnalysis =
     completedAnalyses.find((analysis) => analysis.id === selectedId) ??
     completedAnalyses[0];
+  const simulatedAnalysisResult = useMemo(() => {
+    if (!selectedAnalysis) return undefined;
+
+    return generateAnalysisResult(
+      createAnalysisInputFromProject(selectedAnalysis, workspace, analysisVariant),
+    );
+  }, [analysisVariant, selectedAnalysis, workspace]);
 
   if (!selectedAnalysis) {
     return (
@@ -302,7 +315,10 @@ export function AnalysisView() {
                 <button
                   key={analysis.id}
                   type="button"
-                  onClick={() => setSelectedId(analysis.id)}
+                  onClick={() => {
+                    setSelectedId(analysis.id);
+                    setAnalysisVariant(0);
+                  }}
                   className={`w-full rounded-2xl border p-3.5 text-left transition ${
                     active
                       ? "border-[#9dbaf7] bg-[#eef4ff] shadow-[0_7px_18px_rgba(37,99,235,0.08)]"
@@ -405,6 +421,15 @@ export function AnalysisView() {
               이어지는지 보세요. 보완 질문은 최종 산출물의 신뢰도를 높이는
               체크리스트입니다.
             </SectionGuide>
+
+            {simulatedAnalysisResult ? (
+              <AnalysisResultCard
+                result={simulatedAnalysisResult}
+                onRegenerate={() =>
+                  setAnalysisVariant((currentVariant) => currentVariant + 1)
+                }
+              />
+            ) : null}
 
             <section
               className={`rounded-2xl border p-5 sm:p-6 ${
@@ -757,7 +782,7 @@ export function AnalysisView() {
                     </p>
                   </div>
                   <span className="rounded-full bg-[#eaf1ff] px-3 py-1.5 text-[11px] font-black text-[#2563eb]">
-                    OpenAI Mock 검토
+                    내부 분석 로직 검토
                   </span>
                 </div>
 

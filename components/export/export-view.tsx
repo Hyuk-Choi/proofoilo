@@ -408,8 +408,8 @@ export function ExportView({
               <p className="mt-1.5 text-[12px] leading-6 text-[#8996a8]">
                 기본 선택은 최종 포트폴리오 PPTX입니다. 텍스트 미리보기로
                 지원 직무 맞춤 흐름과 모든 분석 반영 여부를 확인한 뒤 PPTX
-                파일을 다운로드하세요. 실제 OpenAI API는 아직 연결하지 않고
-                mock provider로 컨설턴트 수준의 구조를 만듭니다.
+                파일을 다운로드하세요. 외부 생성 API는 아직 연결하지 않고
+                내부 분석 로직으로 컨설턴트 수준의 구조를 만듭니다.
               </p>
             </div>
 
