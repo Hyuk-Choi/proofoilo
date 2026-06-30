@@ -102,6 +102,17 @@ function buildPriorityActions(
     }));
 }
 
+function getScoreEntries(scores: ReturnType<typeof scoreAnalysisInput>["scores"]) {
+  return [
+    { label: "시장 적합성", score: scores.marketFit },
+    { label: "타깃 정합성", score: scores.targetFit },
+    { label: "메시지 명확성", score: scores.messageClarity },
+    { label: "전환 가능성", score: scores.conversionPotential },
+    { label: "예산 효율성", score: scores.budgetEfficiency },
+    { label: "실행 용이성", score: scores.executionDifficulty },
+  ];
+}
+
 export function generateAnalysisResult(input: AnalysisInput): AnalysisResult {
   const baseSeed = `${input.seed ?? ""}:${JSON.stringify({
     ...input,
@@ -128,10 +139,16 @@ export function generateAnalysisResult(input: AnalysisInput): AnalysisResult {
   );
   const action = scoring.scores.conversionPotential >= 70 ? "다음 행동" : "작은 테스트";
   const solution = bundle.recommendations[0] ?? "메시지와 근거를 다시 연결하는 방식";
-  const summary = replaceTemplate(
-    pickVariant(copyTemplates.summary, variationSeed, "summary"),
-    { target, industry, goal, problem },
+  const scoreEntries = getScoreEntries(scoring.scores);
+  const strongestScore = scoreEntries.reduce((best, entry) =>
+    entry.score > best.score ? entry : best,
   );
+  const weakestScore = scoreEntries.reduce((weakest, entry) =>
+    entry.score < weakest.score ? entry : weakest,
+  );
+  const priorityActions = buildPriorityActions(scoring, bundle);
+  const headlineDiagnosis = `${target} 기준으로 ${strongestScore.label}은 강점이지만 ${weakestScore.label}이 병목입니다. 지금은 '${priorityActions[0]?.action ?? "핵심 메시지 검증"}'을 먼저 실행해야 합니다.`;
+  const summary = `입력값 기반 분석 결과입니다. ${goal} 목표를 ${industry} 참고 벤치마크와 전략 패턴에 맞춰 보면, ${problem}을 줄이고 검증 가능한 작은 액션으로 전환하는 것이 핵심입니다.`;
   const generatedCopy = copyTemplates.copy.slice(0, 5).map((template, index) =>
     replaceTemplate(pickVariant(copyTemplates.copy, variationSeed, `copy-${index}`), {
       target,
@@ -151,6 +168,7 @@ export function generateAnalysisResult(input: AnalysisInput): AnalysisResult {
   ];
 
   return {
+    headlineDiagnosis,
     summary,
     totalScore: scoring.totalScore,
     confidenceLevel: scoring.confidenceLevel,
@@ -166,7 +184,7 @@ export function generateAnalysisResult(input: AnalysisInput): AnalysisResult {
     ].slice(0, 3),
     problems: bundle.problems.slice(0, 3),
     recommendations: bundle.recommendations.slice(0, 5),
-    priorityActions: buildPriorityActions(scoring, bundle),
+    priorityActions,
     generatedCopy,
     nextTestIdeas,
     caution: pickVariant(copyTemplates.caution, variationSeed, "caution"),

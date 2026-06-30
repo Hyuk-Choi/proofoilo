@@ -44,6 +44,7 @@ export type BenchmarkRange = {
 };
 
 export type AnalysisResult = {
+  headlineDiagnosis: string;
   summary: string;
   totalScore: number;
   confidenceLevel: ConfidenceLevel;

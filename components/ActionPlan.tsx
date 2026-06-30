@@ -14,7 +14,7 @@ export function ActionPlan({ actions }: { actions: PriorityAction[] }) {
           PRIORITY ACTIONS
         </p>
         <h4 className="mt-1.5 text-[15px] font-black text-[#263853]">
-          개선 우선순위
+          8. 우선순위 액션 플랜
         </h4>
         <p className="mt-2 text-[12px] leading-6 text-[#6f7f94]">
           점수가 낮은 항목부터 실행 부담과 기대효과를 함께 보고 정렬했습니다.

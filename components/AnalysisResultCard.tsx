@@ -16,14 +16,18 @@ import type { AnalysisResult } from "@/types/analysis";
 
 function buildExportText(result: AnalysisResult) {
   return [
-    "# Proofolio 시뮬레이션 분석 결과",
+    "# Proofolio 입력값 기반 분석 결과",
     "",
-    `요약: ${result.summary}`,
-    `총점: ${Math.round(result.totalScore)}/100`,
-    `신뢰도: ${result.confidenceLevel}`,
-    `입력 완성도: ${Math.round(result.inputCompleteness)}/100`,
+    "1. 핵심 진단 한 줄",
+    result.headlineDiagnosis,
     "",
-    "## 항목별 점수",
+    "2. 종합 점수",
+    `${Math.round(result.totalScore)}/100`,
+    "",
+    "3. 신뢰도",
+    `${result.confidenceLevel} · 입력 완성도 ${Math.round(result.inputCompleteness)}/100`,
+    "",
+    "4. 항목별 점수",
     `시장 적합성: ${Math.round(result.scores.marketFit)}`,
     `타깃 정합성: ${Math.round(result.scores.targetFit)}`,
     `메시지 명확성: ${Math.round(result.scores.messageClarity)}`,
@@ -31,27 +35,28 @@ function buildExportText(result: AnalysisResult) {
     `예산 효율성: ${Math.round(result.scores.budgetEfficiency)}`,
     `실행 용이성: ${Math.round(result.scores.executionDifficulty)}`,
     "",
-    "## 핵심 인사이트",
+    "5. 주요 인사이트",
     ...result.keyInsights.map((item) => `- ${item}`),
     "",
-    "## 문제점",
+    "6. 발견된 문제점",
     ...result.problems.map((item) => `- ${item}`),
     "",
-    "## 추천 액션",
+    "7. 개선 전략",
     ...result.recommendations.map((item) => `- ${item}`),
     "",
-    "## 우선순위",
+    "8. 우선순위 액션 플랜",
     ...result.priorityActions.map(
       (item) => `- [${item.priority}] ${item.action}: ${item.reason}`,
     ),
     "",
-    "## 생성 카피",
+    "9. 바로 사용할 수 있는 문장",
     ...result.generatedCopy.map((item) => `- ${item}`),
     "",
-    "## 다음 테스트",
+    "10. 다음 테스트 제안",
     ...result.nextTestIdeas.map((item) => `- ${item}`),
     "",
-    `주의: ${result.caution}`,
+    "11. 주의사항",
+    result.caution,
   ].join("\n");
 }
 
@@ -91,12 +96,15 @@ export function AnalysisResultCard({
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black tracking-[0.13em] text-[#bcd3ff]">
               <Sparkles size={12} />
-              MOCK DATA BASED STRATEGY RESULT
+              입력값 기반 분석 결과입니다
             </p>
             <h4 className="mt-4 text-[19px] font-black tracking-[-0.035em]">
-              데이터 기반 자동 분석 결과
+              1. 핵심 진단 한 줄
             </h4>
             <p className="mt-2 max-w-3xl text-[13px] font-semibold leading-7 text-white/72">
+              {result.headlineDiagnosis}
+            </p>
+            <p className="mt-3 max-w-3xl rounded-2xl bg-white/10 px-4 py-3 text-[12px] font-semibold leading-6 text-white/64 ring-1 ring-white/10">
               {result.summary}
             </p>
           </div>
@@ -130,8 +138,8 @@ export function AnalysisResultCard({
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
-            ["총점", `${Math.round(result.totalScore)}/100`],
-            ["신뢰도", result.confidenceLevel],
+            ["2. 종합 점수", `${Math.round(result.totalScore)}/100`],
+            ["3. 신뢰도", result.confidenceLevel],
             ["입력 완성도", `${Math.round(result.inputCompleteness)}/100`],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
@@ -151,7 +159,7 @@ export function AnalysisResultCard({
           <div className="mb-3 flex items-center gap-2">
             <ShieldCheck size={16} className="text-[#2563eb]" />
             <h4 className="text-[14px] font-black text-[#263853]">
-              가중치 기반 점수표
+              4. 항목별 점수
             </h4>
           </div>
           <ScoreBreakdown scores={result.scores} />
@@ -159,21 +167,21 @@ export function AnalysisResultCard({
 
         <div className="grid gap-4 lg:grid-cols-3">
           <InsightList
-            title="핵심 인사이트"
+            title="5. 주요 인사이트"
             description="입력값에서 전략적으로 읽을 수 있는 의미입니다."
             items={result.keyInsights}
             tone="blue"
           />
           <InsightList
-            title="현재 문제"
+            title="6. 발견된 문제점"
             description="최종 결과물의 설득력을 낮출 수 있는 부분입니다."
             items={result.problems}
             tone="amber"
           />
           <InsightList
-            title="추천 방향"
+            title="7. 개선 전략"
             description="먼저 손보면 결과물 완성도가 올라가는 항목입니다."
-            items={result.recommendations.slice(0, 3)}
+            items={result.recommendations}
             tone="green"
           />
         </div>
@@ -183,7 +191,7 @@ export function AnalysisResultCard({
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="rounded-2xl border border-[#dbe7f8] bg-[#f8fbff] p-5">
             <h4 className="text-[14px] font-black text-[#264d85]">
-              생성 카피 예시
+              9. 바로 사용할 수 있는 문장
             </h4>
             <p className="mt-2 text-[12px] leading-6 text-[#5f789b]">
               같은 전략 방향을 유지하되 표현을 바꿔 테스트할 수 있는 문장입니다.
@@ -201,6 +209,17 @@ export function AnalysisResultCard({
           </div>
 
           <div className="space-y-4">
+            <div className="rounded-2xl border border-[#dbe7f8] bg-[#f8fbff] p-4">
+              <h5 className="text-[12px] font-black text-[#2563eb]">
+                10. 다음 테스트 제안
+              </h5>
+              <ul className="mt-3 space-y-2 text-[11px] font-semibold leading-5 text-[#55739b]">
+                {result.nextTestIdeas.map((testIdea) => (
+                  <li key={testIdea}>- {testIdea}</li>
+                ))}
+              </ul>
+            </div>
+
             <div className="rounded-2xl border border-[#e3ebf5] bg-white p-4">
               <h5 className="text-[12px] font-black text-[#31435d]">
                 참고 벤치마크
@@ -221,7 +240,7 @@ export function AnalysisResultCard({
 
             <div className="rounded-2xl border border-[#f1d7dc] bg-[#fff7f8] p-4">
               <h5 className="text-[12px] font-black text-[#c24b5a]">
-                해석 주의
+                11. 주의사항
               </h5>
               <p className="mt-2 text-[11px] font-semibold leading-5 text-[#8f5360]">
                 {result.caution}
